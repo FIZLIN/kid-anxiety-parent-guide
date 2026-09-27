@@ -58,6 +58,7 @@ body {
 .page {
   display: none;
   padding: 3rem 2.6rem 6rem;
+  padding-top: 0;
   min-height: var(--height);
 }
 .page.active {
@@ -89,6 +90,11 @@ body {
   padding-bottom: 0.8rem;
   margin-bottom: 2rem;
   border-bottom: 1px solid var(--line);
+
+  position: sticky;
+  top: 0px;
+  background: var(--page);
+  padding-top: 3rem;
 }
 .runhead .r {
   font-style: italic;
@@ -1026,4 +1032,10 @@ h3.sub {
     min-width: 3.6em;
     font-size: 29px;
   }
+}
+
+/* shown in a page slot when pages/<name>.html fails to load */
+.load-error {
+  font-style: italic;
+  color: var(--lilac);
 }
