@@ -1,49 +1,56 @@
-// Book pages in reading order: [file in pages/ without .html, label shown in the nav].
+// Running-head titles (left side of the header above each page).
+const BOOK = "Смелост на малки глътки";
+const CH1 = "Тялото на страха";
+const CH2 = "Лицата на страха";
+
+// Book pages in reading order.
+//   file:    pages/<file>.html
+//   nav:     label shown in the bottom nav
+//   runhead: [left, right] text of the header above the page, or null for none
 const PAGES = [
-  ["cover", "Корица"],
-  ["contents", "Съдържание"],
-  ["ch1-map", "Тялото на страха"],
-  ["ch1-alarm", "Алармата"],
-  ["ch1-two-paths", "Двата пътя"],
-  ["ch1-brake", "Спирачката"],
-  ["ch1-stress-axis", "Оста на стреса"],
-  ["ch1-stress-trace", "Следата на стреса"],
-  ["ch1-three-gears", "Трите предавки"],
-  ["ch1-freeze", "Замирането"],
-  ["ch1-gut", "Корема"],
-  ["ch1-temperament", "Темпераментът"],
-  ["ch1-what-remains", "Какво остава"],
-  ["ch1-figures", "На цифри"],
-  ["ch2-intro", "Лицата на страха"],
-  ["ch2-map", "Карта на втора глава"],
-  ["ch2-sm", "Селективен мутизъм"],
-  ["ch2-sad", "Тревожност при раздяла"],
-  ["ch2-adapt", "Адаптационен синдром"],
-  ["ch2-social", "Социална тревожност"],
-  ["ch2-phobia", "Специфични фобии"],
-  ["ch2-night", "Нощните страхове"],
-  ["ch2-gad", "„Ами ако…“"],
-  ["ch2-emeto", "Еметофобия"],
-  ["ch2-arfid", "Когато чинията плаши"],
-  ["ch2-comorb", "Коморбидност"],
-  ["about-project", "За проекта"],
-  ["about-authors", "Авторите"],
+  { file: "cover", nav: "Корица", runhead: null },
+  { file: "contents", nav: "Съдържание", runhead: [BOOK, "Съдържание"] },
+  { file: "ch1-map", nav: "Тялото на страха", runhead: [BOOK, "Глава първа"] },
+  { file: "ch1-alarm", nav: "Алармата", runhead: [CH1, "Алармата в мозъка"] },
+  { file: "ch1-two-paths", nav: "Двата пътя", runhead: [CH1, "Двата пътя на страха"] },
+  { file: "ch1-brake", nav: "Спирачката", runhead: [CH1, "Спирачката, която узрява"] },
+  { file: "ch1-stress-axis", nav: "Оста на стреса", runhead: [CH1, "Бавната вълна на стреса"] },
+  { file: "ch1-stress-trace", nav: "Следата на стреса", runhead: [CH1, "Когато стресът остави следа"] },
+  { file: "ch1-three-gears", nav: "Трите предавки", runhead: [CH1, "Трите предавки на тялото"] },
+  { file: "ch1-freeze", nav: "Замирането", runhead: [CH1, "Когато тялото замръзва"] },
+  { file: "ch1-gut", nav: "Корема", runhead: [CH1, "Когато тревогата боли"] },
+  { file: "ch1-temperament", nav: "Темпераментът", runhead: [CH1, "Роден по-предпазлив"] },
+  { file: "ch1-what-remains", nav: "Какво остава", runhead: [CH1, "Какво остава за нас"] },
+  { file: "ch1-figures", nav: "На цифри", runhead: [CH1, "На цифри"] },
+  { file: "ch2-intro", nav: "Лицата на страха", runhead: [BOOK, "Глава втора"] },
+  { file: "ch2-map", nav: "Карта на втора глава", runhead: [CH2, "Карта на главата"] },
+  { file: "ch2-sm", nav: "Селективен мутизъм", runhead: [CH2, "Селективен мутизъм"] },
+  { file: "ch2-sad", nav: "Тревожност при раздяла", runhead: [CH2, "Тревожност при раздяла"] },
+  { file: "ch2-adapt", nav: "Адаптационен синдром", runhead: [CH2, "Адаптационен синдром"] },
+  { file: "ch2-social", nav: "Социална тревожност", runhead: [CH2, "Социална тревожност"] },
+  { file: "ch2-phobia", nav: "Специфични фобии", runhead: [CH2, "Специфични фобии"] },
+  { file: "ch2-night", nav: "Нощните страхове", runhead: [CH2, "Кошмари и нощни ужаси"] },
+  { file: "ch2-gad", nav: "„Ами ако…“", runhead: [CH2, "Генерализирана тревожност"] },
+  { file: "ch2-emeto", nav: "Еметофобия", runhead: [CH2, "Еметофобия"] },
+  { file: "ch2-arfid", nav: "Когато чинията плаши", runhead: [CH2, "Когато чинията плаши"] },
+  { file: "ch2-comorb", nav: "Коморбидност", runhead: [CH2, "Коморбидност"] },
+  { file: "about-project", nav: "За проекта", runhead: [BOOK, "За проекта"] },
+  { file: "about-authors", nav: "Авторите", runhead: [BOOK, "Авторите"] },
 ];
-const labels = PAGES.map((p) => p[1]);
 let cur = 0;
 const total = PAGES.length;
 
-// Each page starts as an empty placeholder and is swapped for pages/<name>.html once fetched.
+// Each page starts as an empty placeholder and is swapped for pages/<file>.html once fetched.
 const stage = document.getElementById("stage");
-const pages = PAGES.map(([name]) => {
+const pages = PAGES.map(({ file }) => {
   const s = document.createElement("section");
   s.className = "page scroll";
-  s.dataset.page = name;
+  s.dataset.page = file;
   stage.insertBefore(s, stage.querySelector(".nav"));
   return s;
 });
-PAGES.forEach(([name], i) => {
-  fetch("pages/" + name + ".html")
+PAGES.forEach(({ file }, i) => {
+  fetch("pages/" + file + ".html")
     .then((r) => {
       if (!r.ok) throw new Error(r.status);
       return r.text();
@@ -57,19 +64,26 @@ PAGES.forEach(([name], i) => {
       pages[i] = el;
     })
     .catch((e) => {
-      console.log("Failed to load page " + name + ": " + e);
+      console.log("Failed to load page " + file + ": " + e);
       pages[i].innerHTML =
         '<p class="load-error">Страницата не можа да се зареди. Опитайте да презаредите.</p>';
     });
 });
 function pageIndex(p) {
-  return typeof p === "number" ? p : PAGES.findIndex((x) => x[0] === p);
+  return typeof p === "number" ? p : PAGES.findIndex((x) => x.file === p);
 }
 function render() {
   pages.forEach((p, i) => p.classList.toggle("active", i === cur));
   document.getElementById("prev").disabled = cur === 0;
   document.getElementById("next").disabled = cur === total - 1;
-  document.getElementById("pageno").textContent = labels[cur] || "";
+  document.getElementById("pageno").textContent = PAGES[cur].nav;
+  const rh = document.getElementById("runhead"),
+    head = PAGES[cur].runhead;
+  rh.hidden = !head;
+  if (head) {
+    rh.querySelector(".l").textContent = head[0];
+    rh.querySelector(".r").textContent = head[1];
+  }
   if (pages[cur]) pages[cur].scrollTop = 0;
   document.getElementById("stage").scrollIntoView({ block: "nearest" });
 }

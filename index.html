@@ -12,13 +12,15 @@
 <body>
 <div class="book">
   <div class="stage" id="stage">
-
+    <div class="runhead" id="runhead" hidden><span class="l"></span><span class="r"></span></div>
 
     <div class="nav">
       <button id="prev" onclick="prev()">Назад</button>
       <button class="home" onclick="goTo('contents')" title="Съдържание">Съдържание</button>
-      <span class="pageno" id="pageno"></span>
-      <button class="back" id="back" onclick="goBack()" hidden></button>
+      <span class="nav-slot">
+        <span class="pageno" id="pageno"></span>
+        <button class="back" id="back" onclick="goBack()" hidden></button>
+      </span>
       <button id="next" onclick="next()">Напред</button>
     </div>
   </div>
