@@ -1,7 +1,9 @@
 // Running-head titles (left side of the header above each page).
 const BOOK = "Смелост на малки глътки";
-const CH1 = "Тялото на страха";
-const CH2 = "Лицата на страха";
+const CH1 = "I. Тялото на страха";
+const CH2 = "II. Лицата на страха";
+const CH3 = "III. Знаците на повърхността";
+const CH4 = "IV. Истории от кабинета";
 
 // Book pages in reading order.
 //   file:    pages/<file>.html
@@ -34,11 +36,49 @@ const PAGES = [
   { file: "ch2-emeto", nav: "Еметофобия", runhead: [CH2, "Еметофобия"] },
   { file: "ch2-arfid", nav: "Когато чинията плаши", runhead: [CH2, "Когато чинията плаши"] },
   { file: "ch2-comorb", nav: "Коморбидност", runhead: [CH2, "Коморбидност"] },
+  { file: "ch3-intro", nav: "Знаците на повърхността", runhead: [BOOK, "Глава трета"] },
+  { file: "ch3-map", nav: "Карта на трета глава", runhead: [CH3, "Карта на главата"] },
+  { file: "ch3-body1", nav: "Коремът", runhead: [CH3, "Коремът, който боли"] },
+  { file: "ch3-body2", nav: "Тялото на нокти", runhead: [CH3, "Тялото на нокти"] },
+  { file: "ch3-body3", nav: "Нощта и чинията", runhead: [CH3, "Нощта и чинията"] },
+  { file: "ch3-avoid", nav: "Избягването", runhead: [CH3, "Изкуството да избягваш"] },
+  { file: "ch3-freeze", nav: "Застиването", runhead: [CH3, "Когато детето застине"] },
+  { file: "ch3-shadow", nav: "Сянката", runhead: [CH3, "Сянката"] },
+  { file: "ch3-questions", nav: "Безкрайните въпроси", runhead: [CH3, "Безкрайните въпроси"] },
+  { file: "ch3-anger", nav: "Страх с лице на гняв", runhead: [CH3, "Страх с лице на гняв"] },
+  { file: "ch3-tears", nav: "Сълзи на тънък конец", runhead: [CH3, "Сълзи на тънък конец"] },
+  { file: "ch3-whatif", nav: "„Ами ако…“", runhead: [CH3, "„Ами ако…“"] },
+  { file: "ch3-context", nav: "Едно дете, много места", runhead: [CH3, "Едно дете, много места"] },
+  { file: "ch3-ages", nav: "Знаците и възрастта", runhead: [CH3, "Знаците според възрастта"] },
+  { file: "ch4-intro", nav: "Истории от кабинета", runhead: [BOOK, "Глава четвърта"] },
+  { file: "ch4-map", nav: "Карта на четвърта глава", runhead: [CH4, "Карта на главата"] },
+  { file: "ch4-play", nav: "Игрова терапия", runhead: [CH4, "Игрова терапия"] },
+  { file: "ch4-art", nav: "Арт терапия", runhead: [CH4, "Арт терапия"] },
+  { file: "ch4-calm", nav: "Родителят като треньор", runhead: [CH4, "Родителят като треньор"] },
+  { file: "ch4-ladder", nav: "Стълбата на страха", runhead: [CH4, "Стълбата на страха"] },
+  { file: "ch4-act", nav: "Приемане и ангажираност", runhead: [CH4, "Приемане и ангажираност"] },
+  { file: "ch4-evidence", nav: "Големите изследвания", runhead: [CH4, "Големите изследвания"] },
   { file: "about-project", nav: "За проекта", runhead: [BOOK, "За проекта"] },
   { file: "about-authors", nav: "Авторите", runhead: [BOOK, "Авторите"] },
 ];
-let cur = 0;
 const total = PAGES.length;
+
+// Remember the open page (by file name, so it survives reordering) across reloads.
+// Storage can be unavailable (private mode, blocked site data), so failures are ignored.
+const STORAGE_KEY = "book:page";
+function loadSavedPage() {
+  try {
+    return Math.max(0, pageIndex(localStorage.getItem(STORAGE_KEY)));
+  } catch (e) {
+    return 0;
+  }
+}
+function savePage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, PAGES[cur].file);
+  } catch (e) {}
+}
+let cur = loadSavedPage();
 
 // Each page starts as an empty placeholder and is swapped for pages/<file>.html once fetched.
 const stage = document.getElementById("stage");
@@ -73,6 +113,7 @@ function pageIndex(p) {
   return typeof p === "number" ? p : PAGES.findIndex((x) => x.file === p);
 }
 function render() {
+  savePage();
   pages.forEach((p, i) => p.classList.toggle("active", i === cur));
   document.getElementById("prev").disabled = cur === 0;
   document.getElementById("next").disabled = cur === total - 1;
