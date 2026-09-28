@@ -47,7 +47,7 @@
 
     <div class="nav">
       <button id="prev" onclick="prev()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span class="label">Назад</span></button>
-      <button class="home" onclick="openToc()" aria-haspopup="dialog" title="Съдържание и търсене"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="label">Съдържание</span></button>
+      <button class="home" onclick="openToc()" aria-haspopup="dialog" title="Съдържание, търсене и размер на текста"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="label">Съдържание</span></button>
       <span class="nav-slot">
         <span class="pageno" id="pageno"></span>
         <span class="pagepos" id="pagepos"></span>
@@ -65,6 +65,12 @@
     <div class="toc-head">
       <h2 id="toc-title">Съдържание</h2>
       <button class="toc-close" onclick="toc.close()" aria-label="Затвори"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="toc-settings" role="group" aria-labelledby="text-size-label">
+      <span class="lab" id="text-size-label">Размер на текста</span>
+      <button id="text-smaller" onclick="setTextSize(textSize - 1)" aria-label="По-малък текст">A<span aria-hidden="true">−</span></button>
+      <output id="text-size" aria-live="polite">100%</output>
+      <button id="text-larger" onclick="setTextSize(textSize + 1)" aria-label="По-голям текст">A<span aria-hidden="true">+</span></button>
     </div>
     <label class="toc-search">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>

@@ -127,7 +127,10 @@ PAGES.forEach(({ file }, i) => {
       el.classList.toggle("active", i === cur);
       pages[i].replaceWith(el);
       pages[i] = el;
-      if (i === cur) updateProgress();
+      if (i === cur) {
+        updateProgress();
+        restoreSavedScroll();
+      }
     })
     .catch((e) => {
       console.log("Failed to load page " + file + ": " + e);
@@ -153,6 +156,74 @@ document.addEventListener("scroll", updateProgress, {
   passive: true,
 });
 window.addEventListener("resize", updateProgress);
+
+// Where the reader is within the page: the page's top-level block at the top
+// of the view and how far into it, as a fraction of its height. Unlike a pixel
+// offset, this survives a different text size or screen width and images
+// loading above. Kept in the history entry (for Back/Forward) and in storage
+// (for the next visit); null means the top of the page.
+history.scrollRestoration = "manual";
+const SCROLL_KEY = "book:scroll";
+const savedScroll = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem(SCROLL_KEY));
+    return v && v.page === PAGES[cur].file ? v.at : null;
+  } catch (e) {
+    return null;
+  }
+})();
+// Position of a block within the scroller's content.
+function blockTop(s, el) {
+  const base = s === document.scrollingElement ? 0 : s.getBoundingClientRect().top;
+  return el.getBoundingClientRect().top - base + s.scrollTop;
+}
+function scrollAt() {
+  const s = scroller(),
+    blocks = pages[cur].children;
+  if (!s.scrollTop) return null;
+  for (let k = 0; k < blocks.length; k++) {
+    const y = blockTop(s, blocks[k]),
+      h = blocks[k].getBoundingClientRect().height;
+    if (h && y + h > s.scrollTop) return [k, (s.scrollTop - y) / h];
+  }
+  return null;
+}
+function scrollToAt(at) {
+  const s = scroller(),
+    block = at && pages[cur].children[at[0]];
+  const top = block
+    ? blockTop(s, block) + at[1] * block.getBoundingClientRect().height
+    : 0;
+  s.scrollTo({ top: top, behavior: "instant" });
+}
+let scrollSaveTimer = 0;
+function saveScroll() {
+  scrollSaveTimer = 0;
+  const v = { page: PAGES[cur].file, at: scrollAt() };
+  history.replaceState(v, "");
+  try {
+    localStorage.setItem(SCROLL_KEY, JSON.stringify(v));
+  } catch (e) {}
+}
+document.addEventListener(
+  "scroll",
+  () => {
+    if (!scrollSaveTimer && !toc.open) scrollSaveTimer = setTimeout(saveScroll, 250);
+  },
+  { capture: true, passive: true },
+);
+// Once, when the open page first loads: back to where the last visit left off,
+// after the web fonts are in so the page has its final height. Skipped if the
+// reader has already scrolled or moved on.
+function restoreSavedScroll() {
+  const page = cur;
+  document.fonts.ready.then(() => {
+    if (cur === page && savedScroll && !scroller().scrollTop) {
+      scrollToAt(savedScroll);
+      updateProgress();
+    }
+  });
+}
 function pageIndex(p) {
   return typeof p === "number" ? p : PAGES.findIndex((x) => x.file === p);
 }
@@ -178,6 +249,8 @@ function render(push = true) {
   scroller().scrollTop = 0;
   document.getElementById("stage").scrollIntoView({ block: "nearest" });
   updateProgress();
+  // no scroll event when the new page is already at the top
+  saveScroll();
 }
 function next() {
   if (cur < total - 1) {
@@ -222,13 +295,15 @@ function goBack(push = true) {
   const t = backStack;
   backStack = null;
   goTo(t.page, push);
-  scroller().scrollTop = t.scroll;
+  scroller().scrollTo({ top: t.scroll, behavior: "instant" });
+  updateProgress();
+  saveScroll();
   showBack();
 }
 // Browser Back/Forward, or an edited address. Going back to the page a
 // cross-reference was followed from works like "Обратно към …" and restores
 // the scroll position.
-window.addEventListener("popstate", () => {
+window.addEventListener("popstate", (e) => {
   const i = Math.max(0, pageFromHash());
   // an unknown address shows the cover; don't leave it in the address bar
   if (location.hash !== pageHash(i)) history.replaceState(null, "", pageUrl(i));
@@ -236,6 +311,11 @@ window.addEventListener("popstate", () => {
   backStack = null;
   goTo(i, false);
   showBack();
+  if (e.state && e.state.page === PAGES[i].file) {
+    scrollToAt(e.state.at);
+    updateProgress();
+    saveScroll();
+  }
 });
 document.addEventListener("keydown", (e) => {
   if (
@@ -480,6 +560,33 @@ function showHit(i, at, len) {
 function clearSearchHighlight() {
   if (window.CSS && CSS.highlights) CSS.highlights.delete("search");
 }
+
+// Text size, as a zoom on each page's text (styles.css: --text-zoom). Kept in
+// storage; the scroll position is carried over so the reader keeps their place.
+const TEXT_SIZES = [0.9, 1, 1.1, 1.2, 1.35];
+const TEXT_KEY = "book:text-size";
+let textSize = 1;
+try {
+  textSize = TEXT_SIZES.indexOf(+localStorage.getItem(TEXT_KEY));
+} catch (e) {}
+if (textSize < 0) textSize = 1;
+function setTextSize(k) {
+  textSize = Math.max(0, Math.min(TEXT_SIZES.length - 1, k));
+  const z = TEXT_SIZES[textSize],
+    at = scrollAt();
+  document.documentElement.style.setProperty("--text-zoom", z);
+  scrollToAt(at);
+  updateProgress();
+  document.getElementById("text-size").textContent = Math.round(z * 100) + "%";
+  document.getElementById("text-smaller").disabled = textSize === 0;
+  document.getElementById("text-larger").disabled =
+    textSize === TEXT_SIZES.length - 1;
+  try {
+    if (z === 1) localStorage.removeItem(TEXT_KEY);
+    else localStorage.setItem(TEXT_KEY, z);
+  } catch (e) {}
+}
+setTextSize(textSize);
 
 // Light/dark theme. The script in index.html's <head> applies it before the
 // first paint. A choice that matches the system setting isn't stored, so the

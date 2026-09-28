@@ -28,10 +28,10 @@ UI and feature backlog for the book preview. Tick items off as they land.
 
 ### High value
 
-- [ ] **Reading settings.** Font size (A− / A+), maybe line spacing, stored in localStorage.
-- [ ] **Remember scroll position within a page**, not just which page is open.
-- [ ] **"Кога да потърсим специалист" page.** An always-reachable page on when to see a specialist, with Bulgarian helplines.
-- [ ] **Call to action at the end of the preview.** Say that chapters V–VI are coming, with email sign-up or follow links, instead of ending on "Авторите".
+- [x] **Reading settings.** Font size (A− / A+), maybe line spacing, stored in localStorage.
+- [x] **Remember scroll position within a page**, not just which page is open.
+- [ ] (ignore for now) **"Кога да потърсим специалист" page.** An always-reachable page on when to see a specialist, with Bulgarian helplines.
+- [ ] (ignore for now) **Call to action at the end of the preview.** Say that chapters V–VI are coming, with email sign-up or follow links, instead of ending on "Авторите".
 
 ### Nice to have
 

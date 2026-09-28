@@ -100,6 +100,12 @@ body {
   min-height: 0;
   padding: 2rem var(--gutter) 6rem;
 }
+/* Reading text size (A− / A+ in the contents drawer, set by book.js). A zoom,
+   because the page styles use fixed px sizes. Not on the cover, which is laid
+   out as a whole, or on figures, whose diagrams already scale with the width. */
+.page:not(.cover) > :not(.figure) {
+  zoom: var(--text-zoom, 1);
+}
 .page.active {
   display: block;
   animation: turn 0.5s ease;
@@ -1061,6 +1067,50 @@ html:has(.toc[open]) {
 }
 .toc-close:hover {
   color: var(--ink);
+}
+.toc-settings {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 1.4rem 0.8rem;
+  color: var(--lilac-deep);
+}
+.toc-settings .lab {
+  flex: 1;
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  font-size: 13px;
+  color: var(--lilac);
+}
+.toc-settings button {
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  cursor: pointer;
+  font-family: var(--display);
+  color: var(--lilac-deep);
+}
+.toc-settings button:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--lilac);
+}
+.toc-settings button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+#text-smaller {
+  font-size: 14px;
+}
+#text-larger {
+  font-size: 19px;
+}
+.toc-settings output {
+  min-width: 3.4em;
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--lilac);
 }
 .toc-search {
   display: flex;
