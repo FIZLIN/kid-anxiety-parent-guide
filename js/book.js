@@ -229,12 +229,21 @@ function pageIndex(p) {
 }
 // Each page turn is a browser history entry, so Back/Forward move through the
 // pages read; popstate passes push = false so the entry isn't added twice.
+// Screen readers hear the new page's title: from the live region, or, when
+// focus was on the old page (a cross-reference), by moving focus to the new
+// one, since it would otherwise be left on a hidden element.
+let rendered = false;
 function render(push = true) {
   savePage();
   if (push && location.hash !== pageHash(cur))
     history.pushState(null, "", pageUrl(cur));
   clearSearchHighlight();
+  const focusOnPage = pages.some((p) => p.contains(document.activeElement));
   pages.forEach((p, i) => p.classList.toggle("active", i === cur));
+  const page = pages[cur];
+  page.tabIndex = -1;
+  page.setAttribute("aria-label", PAGES[cur].nav);
+  document.title = cur ? PAGES[cur].nav + " · " + BOOK : BOOK;
   document.getElementById("prev").disabled = cur === 0;
   document.getElementById("next").disabled = cur === total - 1;
   document.getElementById("pageno").textContent = PAGES[cur].nav;
@@ -251,6 +260,14 @@ function render(push = true) {
   updateProgress();
   // no scroll event when the new page is already at the top
   saveScroll();
+  const announce = document.getElementById("announce");
+  if (focusOnPage) {
+    announce.textContent = "";
+    page.focus({ preventScroll: true });
+  } else if (rendered) {
+    announce.textContent = [PAGES[cur].nav, POSITION[cur]].filter(Boolean).join(", ");
+  }
+  rendered = true;
 }
 function next() {
   if (cur < total - 1) {
@@ -284,17 +301,23 @@ function showBack() {
     pn.hidden = pos.hidden = false;
   }
 }
-function jump(i, who) {
-  backStack = { page: cur, scroll: scroller().scrollTop, who: who };
+// A cross-reference: turn to page i, with a way back to the link followed.
+function jump(i, who, from) {
+  backStack = { page: cur, scroll: scroller().scrollTop, who: who, from: from };
   goTo(i);
   showBack();
   document.getElementById("stage").scrollIntoView({ block: "start" });
 }
 function goBack(push = true) {
   if (!backStack) return;
-  const t = backStack;
+  const t = backStack,
+    back = document.getElementById("back"),
+    onBack = document.activeElement === back;
   backStack = null;
   goTo(t.page, push);
+  // the back button is about to hide, so focus returns to the link followed
+  if (onBack)
+    (pages[cur].contains(t.from) ? t.from : pages[cur]).focus({ preventScroll: true });
   scroller().scrollTo({ top: t.scroll, behavior: "instant" });
   updateProgress();
   saveScroll();
@@ -317,24 +340,38 @@ window.addEventListener("popstate", (e) => {
     saveScroll();
   }
 });
-document.addEventListener("keydown", (e) => {
-  if (
-    e.key === "Enter" &&
-    e.target.matches &&
-    e.target.matches(".xref,.seesrc")
-  )
-    e.target.click();
+// Links within the book: a cross-reference (<a class="xref" href="#<page>"
+// data-back="…">) turns to that page with a way back, a source reference
+// (<a class="seesrc" href="#<id>">) goes to the source card on this page.
+// A click with a modifier is left to the browser, e.g. to open a new tab.
+document.addEventListener("click", (e) => {
+  const a = e.target.closest && e.target.closest("a.xref, a.seesrc");
+  if (!a || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)
+    return;
+  e.preventDefault();
+  const id = a.getAttribute("href").slice(1);
+  if (a.classList.contains("xref")) jump(id, a.dataset.back, a);
+  else toBottom(id);
 });
+// Notes and footnote definitions open in place. The button that toggles one
+// says whether it's open: the note's own head, or the footnote mark that
+// names the definition in aria-controls.
+function setOpen(box, open) {
+  box.classList.toggle("open", open);
+  const b =
+    box.querySelector(":scope > .note-head, :scope > .deepen-head") ||
+    document.querySelector('[aria-controls="' + box.id + '"]');
+  if (b) b.setAttribute("aria-expanded", open);
+}
 function toggleNote(id) {
-  document.getElementById(id).classList.toggle("open");
+  const box = document.getElementById(id);
+  if (box) setOpen(box, !box.classList.contains("open"));
 }
-function toggleFn(id) {
-  var el = document.getElementById(id);
-  if (el) el.classList.toggle("open");
-}
+// The source card is a link, so focus lands on it too.
 function toBottom(id) {
   var el = document.getElementById(id);
   if (!el) return;
+  el.focus({ preventScroll: true });
   el.scrollIntoView({ behavior: "smooth", block: "center" });
   el.classList.add("flash");
   setTimeout(function () {
@@ -544,7 +581,7 @@ function showHit(i, at, len) {
     box = box.parentElement.closest(".note, .deepen, .def")
   ) {
     if (!box.classList.contains("open")) opened = true;
-    box.classList.add("open");
+    setOpen(box, true);
   }
   if (window.CSS && CSS.highlights)
     CSS.highlights.set("search", new Highlight(range));

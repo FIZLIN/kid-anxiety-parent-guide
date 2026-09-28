@@ -39,6 +39,34 @@ UI and feature backlog for the book preview. Tick items off as they land.
 - [ ] **Offline support / install as an app (PWA).** Use a service worker to cache the whole book (about 700KB, all static).
 - [ ] **Glossary tooltips** for `.term` words (амигдала, кортизол…).
 
+## Accessibility
+
+Already in place: `lang="bg"`, `:focus-visible` rings, a `prefers-reduced-motion` rule for the page fade, `role="img"` with `aria-label` on the page SVGs, the contents `<dialog>`, and hidden text labels on the icon-only nav buttons.
+
+### High impact
+
+- [x] **Hide collapsed content from screen readers and Tab.** `.note-body`, `.deepen-body` and `.def` collapse with only `max-height: 0; overflow: hidden` (`css/styles.css`). Screen readers still read the hidden text, and Tab stops on invisible `.seesrc` links inside it. Add `visibility: hidden` while closed (it still animates).
+- [x] **Stop open notes from clipping at large text sizes.** Open blocks use fixed limits (`320px`, `460px`, `2400px`, plus per-note overrides like `#sad-n3`). At the 135% text setting, on narrow screens or with browser zoom, the end of a note gets cut off. Animate with `grid-template-rows: 0fr → 1fr` instead, and drop the per-note overrides.
+- [x] **Say whether toggles are open.** `note-head`, `deepen-head` and `.fnmark` buttons have no `aria-expanded` or `aria-controls`. Set `aria-expanded` in `toggleNote()`/`toggleFn()`, and put `aria-hidden="true"` on the `.tog` span (it's read as "plus").
+- [x] **Announce page turns.** After Next/Prev or a contents link, focus stays put and nothing is announced, and `document.title` is the same on all 50 pages. In `render()`, set the title to "<page> · Смелост на малки глътки" and move focus to the new page's heading (`tabindex="-1"`), or announce it in a polite live region.
+- [x] **Turn fake-button spans into real links.** There are 238 `<span role="button" tabindex="0" onclick>` elements (183 `.seesrc`, 55 `.xref`). Space doesn't activate them, and Enter only works through the keydown handler in `js/book.js`. They're jumps, so use `<a href="#src3">` / `<a href="#ch2-sad">`. That also gives open in a new tab and the screen-reader link list.
+
+### Medium
+
+- [ ] **Fix the heading structure.** Only the cover has an `<h1>`. 36 pages open with `<h3 class="sub">` and no `<h2>`, and only 13 pages have an `<h2>`. Make each page's title an `<h2>` (an `<h1>` for the book in the shell) and subsections `<h3>`. The styles can stay the same.
+- [ ] **Add landmarks.** Wrap the stage in `<main>` and make the `.nav` div a `<nav aria-label="…">`.
+- [ ] **Raise text contrast.** `--lilac` (#7e7f9a) on the page is 3.73:1 and is used for about 20 small labels (12–13px: running head, kicker, hints). Small text needs 4.5:1, so darken it to about `#6b6c87`. `--faint` (#b9b8c4) is 1.88:1 (2.47:1 in dark mode) on the "coming soon" chapters. Raise it to at least 3:1 and don't rely on colour alone to show they aren't out yet.
+- [ ] **Fix the dead "soon" button.** `<button class="toc-chapter soon">` in `pages/contents.html` does nothing and isn't disabled. Use a non-interactive element or `aria-disabled="true"`, with text like "(предстои)".
+- [ ] **Keyboard scrolling of the page box on desktop.** Each `.page` scrolls inside its own box, and Safari doesn't make such boxes keyboard-focusable. Give the active page `tabindex="0"` and an `aria-label`.
+- [ ] **Mark English source titles and new-tab links.** Wrap the `.ttl` spans on source cards in `lang="en"` so they aren't read with Bulgarian pronunciation, and add hidden text "(отваря се в нов раздел)" to the `target="_blank"` links.
+
+### Smaller
+
+- [ ] **Don't turn pages with ←/→ while focus is in a scrollable figure or a form control.**
+- [ ] **Extend reduced motion.** Cover the note expand animation, the smooth scrolling in `toBottom()` and the `.flash` highlight, not just the page fade.
+- [ ] **Reliable search-count announcement.** `#toc-count` sits inside `#toc-results`, which starts `hidden`, and some screen readers ignore live regions that were hidden when they appeared. Keep the live region in the DOM at all times.
+- [ ] (optional) **Expose reading progress.** The progress line is decorative today; optionally give it `role="progressbar"`.
+
 ## Technical
 
 - [ ] **Load the current page first and show a loading state.** Right now all 50 pages are fetched in parallel, and a slow target page shows as an empty sheet.
@@ -47,4 +75,4 @@ UI and feature backlog for the book preview. Tick items off as they land.
 
 ## Content
 
-- [ ] **Update the intro in `pages/contents.html`.** It says "Първите две глави са готови", but four chapters are ready now.
+- [x] **Update the intro in `pages/contents.html`.** It says "Първите две глави са готови", but four chapters are ready now.
