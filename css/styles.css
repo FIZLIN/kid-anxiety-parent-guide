@@ -937,7 +937,8 @@ h3.sub {
   opacity: 0.3;
   cursor: default;
 }
-.nav .icon {
+.nav .icon,
+.toc .icon {
   flex: none;
   width: 18px;
   height: 18px;
@@ -992,6 +993,200 @@ h3.sub {
 .pagepos[hidden],
 .pagepos:empty {
   display: none;
+}
+
+/* contents drawer (a modal <dialog>, filled by book.js) */
+.toc {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(360px, 88vw);
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-right: 3px solid var(--lilac-deep);
+  background: var(--page);
+  color: var(--ink);
+  box-shadow: 0 0 44px var(--shadow);
+}
+.toc[open] {
+  animation: slide-in 0.25s ease;
+}
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toc[open] {
+    animation: none;
+  }
+}
+.toc::backdrop {
+  background: rgba(20, 20, 28, 0.4);
+}
+/* the page behind doesn't scroll while the drawer is open */
+html:has(.toc[open]) {
+  overflow: hidden;
+}
+.toc-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.toc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 0.8rem 0.6rem 1.4rem;
+}
+.toc-head h2 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--lilac-deep);
+}
+.toc-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--lilac-deep);
+}
+.toc-close:hover {
+  color: var(--ink);
+}
+.toc-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 1.4rem 0.8rem;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--lilac);
+}
+.toc-search:focus-within {
+  border-color: var(--moss);
+}
+.toc-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  font-family: var(--body);
+  /* 16px or more, or iOS zooms in on focus */
+  font-size: 16px;
+  color: var(--ink);
+}
+.toc-search input::placeholder {
+  color: var(--lilac);
+  font-style: italic;
+}
+.toc-list,
+.toc-results {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 1.4rem 2rem;
+}
+.toc-list[hidden],
+.toc-results[hidden] {
+  display: none;
+}
+.toc-group {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--lilac-deep);
+  margin: 1.1rem 0 0.3rem;
+}
+.toc-pages {
+  list-style: none;
+}
+/* pages after the last chapter */
+.toc-pages + .toc-pages {
+  margin-top: 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+}
+.toc-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  font-family: var(--body);
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--ink);
+  padding: 6px 10px;
+}
+.toc-link:hover,
+.toc-hit:hover {
+  background: var(--lilac-soft);
+}
+.toc-link[aria-current] {
+  border-left-color: var(--moss);
+  background: var(--moss-soft);
+  color: var(--moss-deep);
+  font-style: italic;
+}
+.toc-count {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--lilac);
+  margin: 0.2rem 0 0.4rem;
+}
+.toc-hit {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  font-family: var(--body);
+  color: var(--ink);
+  padding: 10px 6px;
+}
+.hit-title {
+  display: block;
+  font-size: 14.5px;
+  color: var(--lilac-deep);
+}
+.hit-meta {
+  display: block;
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  font-size: 11px;
+  color: var(--lilac);
+}
+.hit-snip {
+  display: block;
+  margin-top: 3px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.hit-snip mark {
+  background: var(--moss-soft);
+  color: inherit;
+  box-shadow: inset 0 -2px var(--moss);
+}
+/* the search match on the page, set by showHit() in book.js */
+::highlight(search) {
+  background-color: var(--moss-soft);
+  color: var(--ink);
+  text-decoration: underline 2px var(--moss);
 }
 
 /* The class colour is only a default: a label with its own fill="…" keeps it

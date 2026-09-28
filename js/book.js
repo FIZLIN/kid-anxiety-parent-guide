@@ -90,7 +90,20 @@ function savePage() {
     localStorage.setItem(STORAGE_KEY, PAGES[cur].file);
   } catch (e) {}
 }
-let cur = loadSavedPage();
+// Each page has its own address, #<file> (the cover is the bare URL). A page
+// in the URL wins over the remembered one.
+function pageFromHash() {
+  return pageIndex(decodeURIComponent(location.hash.slice(1)));
+}
+function pageHash(i) {
+  return i === 0 ? "" : "#" + PAGES[i].file;
+}
+function pageUrl(i) {
+  return pageHash(i) || location.pathname + location.search;
+}
+let cur = location.hash ? pageFromHash() : -1;
+if (cur < 0) cur = loadSavedPage();
+history.replaceState(null, "", pageUrl(cur));
 
 // Each page starts as an empty placeholder and is swapped for pages/<file>.html once fetched.
 const stage = document.getElementById("stage");
@@ -143,8 +156,13 @@ window.addEventListener("resize", updateProgress);
 function pageIndex(p) {
   return typeof p === "number" ? p : PAGES.findIndex((x) => x.file === p);
 }
-function render() {
+// Each page turn is a browser history entry, so Back/Forward move through the
+// pages read; popstate passes push = false so the entry isn't added twice.
+function render(push = true) {
   savePage();
+  if (push && location.hash !== pageHash(cur))
+    history.pushState(null, "", pageUrl(cur));
+  clearSearchHighlight();
   pages.forEach((p, i) => p.classList.toggle("active", i === cur));
   document.getElementById("prev").disabled = cur === 0;
   document.getElementById("next").disabled = cur === total - 1;
@@ -173,11 +191,11 @@ function prev() {
     render();
   }
 }
-function goTo(p) {
+function goTo(p, push = true) {
   const i = pageIndex(p);
   if (i < 0) return;
   cur = i;
-  render();
+  render(push);
 }
 let backStack = null;
 function showBack() {
@@ -199,14 +217,26 @@ function jump(i, who) {
   showBack();
   document.getElementById("stage").scrollIntoView({ block: "start" });
 }
-function goBack() {
+function goBack(push = true) {
   if (!backStack) return;
   const t = backStack;
   backStack = null;
-  goTo(t.page);
+  goTo(t.page, push);
   scroller().scrollTop = t.scroll;
   showBack();
 }
+// Browser Back/Forward, or an edited address. Going back to the page a
+// cross-reference was followed from works like "Обратно към …" and restores
+// the scroll position.
+window.addEventListener("popstate", () => {
+  const i = Math.max(0, pageFromHash());
+  // an unknown address shows the cover; don't leave it in the address bar
+  if (location.hash !== pageHash(i)) history.replaceState(null, "", pageUrl(i));
+  if (backStack && backStack.page === i) return goBack(false);
+  backStack = null;
+  goTo(i, false);
+  showBack();
+});
 document.addEventListener("keydown", (e) => {
   if (
     e.key === "Enter" &&
@@ -232,8 +262,14 @@ function toBottom(id) {
   }, 1600);
 }
 document.addEventListener("keydown", (e) => {
+  // not while typing in the search box or with the contents drawer open
+  if (toc.open || e.target.matches("input, textarea")) return;
   if (e.key === "ArrowRight") next();
   if (e.key === "ArrowLeft") prev();
+  if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    openToc(true);
+  }
 });
 
 // Swipe left/right to turn pages. Only a quick, mostly horizontal stroke
@@ -265,6 +301,186 @@ stage.addEventListener(
   { passive: true },
 );
 
+// Contents drawer: every page grouped by chapter, with search across the book.
+const CHAPTERS = [CH1, CH2, CH3, CH4];
+const toc = document.getElementById("toc"),
+  tocList = document.getElementById("toc-list"),
+  tocQuery = document.getElementById("toc-q"),
+  tocResults = document.getElementById("toc-results");
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+// Consecutive pages with the same chapter number form a group; pages outside
+// the chapters (cover, about…) get a group with no heading.
+let group = null;
+PAGES.forEach((p, i) => {
+  const ch = chapterOf(p.file);
+  if (!group || group.ch !== ch) {
+    group = { ch: ch, ul: el("ul", "toc-pages") };
+    if (ch) tocList.append(el("h3", "toc-group", CHAPTERS[ch - 1]));
+    tocList.append(group.ul);
+  }
+  const b = el("button", "toc-link", p.nav);
+  b.dataset.i = i;
+  const li = el("li");
+  li.append(b);
+  group.ul.append(li);
+});
+function openToc(search) {
+  tocList.querySelectorAll(".toc-link").forEach((b) => {
+    if (+b.dataset.i === cur) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
+  toc.showModal();
+  if (search) {
+    tocQuery.focus();
+    tocQuery.select();
+  } else if (!tocQuery.value) {
+    const b = tocList.querySelector("[aria-current]");
+    b.focus({ preventScroll: true });
+    b.scrollIntoView({ block: "center" });
+  }
+}
+// A click on the backdrop (the dialog itself, outside its panel) closes it.
+toc.addEventListener("click", (e) => {
+  if (e.target === toc) return toc.close();
+  const b = e.target.closest("[data-i]");
+  if (!b) return;
+  toc.close();
+  goTo(+b.dataset.i);
+  if (b.dataset.at) showHit(+b.dataset.i, +b.dataset.at, +b.dataset.len);
+});
+
+// Search. Pages are already in the DOM, so each one's text is indexed on first
+// search: its text nodes joined into one string, remembering where each starts.
+const textIndex = new WeakMap();
+function indexOf(page) {
+  let ix = textIndex.get(page);
+  if (ix) return ix;
+  ix = { text: "", nodes: [], starts: [] };
+  // footnote numbers would glue onto the word before them ("кора4")
+  const w = document.createTreeWalker(page, NodeFilter.SHOW_TEXT, (n) =>
+    n.parentElement.closest(".fnmark")
+      ? NodeFilter.FILTER_REJECT
+      : NodeFilter.FILTER_ACCEPT,
+  );
+  // A space between blocks, so "…ствол</p><p>Област…" doesn't read as one
+  // word. Not between inline elements, which can split a word ("амигдала<b>та</b>").
+  const blockOf = (e) => {
+    while (e !== page && getComputedStyle(e).display.startsWith("inline"))
+      e = e.parentElement;
+    return e;
+  };
+  let lastBlock = null;
+  for (let n; (n = w.nextNode()); ) {
+    const block = blockOf(n.parentElement);
+    if (lastBlock && block !== lastBlock) ix.text += " ";
+    lastBlock = block;
+    ix.nodes.push(n);
+    ix.starts.push(ix.text.length);
+    ix.text += n.data;
+  }
+  textIndex.set(page, ix);
+  return ix;
+}
+// Text node and offset inside it for a position in the joined text.
+function locate(ix, pos) {
+  let k = ix.starts.length - 1;
+  while (k > 0 && ix.starts[k] > pos) k--;
+  return [ix.nodes[k], pos - ix.starts[k]];
+}
+const tidy = (s) => s.replace(/\s+/g, " ");
+function search(q) {
+  // any run of spaces in the query matches any whitespace, e.g. a line break
+  const re = new RegExp(
+    q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"),
+    "giu",
+  );
+  const hits = [];
+  pages.forEach((page, i) => {
+    if (page.querySelector(".load-error")) return;
+    const ix = indexOf(page),
+      found = [...ix.text.matchAll(re)];
+    if (!found.length) return;
+    const m = found[0],
+      end = m.index + m[0].length;
+    hits.push({
+      i: i,
+      at: m.index,
+      len: m[0].length,
+      count: found.length,
+      before: tidy(ix.text.slice(Math.max(0, m.index - 50), m.index)).replace(/^\S*\s/, "…"),
+      match: tidy(m[0]),
+      after: tidy(ix.text.slice(end, end + 80)).replace(/\s\S*$/, "…"),
+    });
+  });
+  return hits;
+}
+const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
+function showResults() {
+  const q = tocQuery.value.trim(),
+    searching = q.length >= 2;
+  tocList.hidden = searching;
+  tocResults.hidden = !searching;
+  if (!searching) return;
+  const hits = search(q);
+  document.getElementById("toc-count").textContent = hits.length
+    ? "Намерено в " + plural(hits.length, "страница", "страници")
+    : "Няма намерени резултати";
+  const list = document.getElementById("toc-hits");
+  list.replaceChildren();
+  hits.forEach((h) => {
+    const b = el("button", "toc-hit");
+    Object.assign(b.dataset, { i: h.i, at: h.at, len: h.len });
+    const title = el("span", "hit-title", PAGES[h.i].nav);
+    title.append(el("span", "hit-meta", [POSITION[h.i], plural(h.count, "съвпадение", "съвпадения")].filter(Boolean).join(" · ")));
+    const snip = el("span", "hit-snip", h.before);
+    snip.append(el("mark", null, h.match), h.after);
+    b.append(title, snip);
+    list.append(b);
+  });
+}
+tocQuery.addEventListener("input", showResults);
+// Enter opens the first result.
+tocQuery.addEventListener("keydown", (e) => {
+  const first = tocResults.querySelector(".toc-hit");
+  if (e.key === "Enter" && first && !tocResults.hidden) first.click();
+});
+// Scroll to a match on the current page and highlight it. A match inside a
+// closed note, deep-dive or definition opens it first, and the scroll waits
+// for its expand animation.
+function showHit(i, at, len) {
+  const ix = indexOf(pages[i]),
+    range = document.createRange();
+  range.setStart(...locate(ix, at));
+  range.setEnd(...locate(ix, at + len));
+  let opened = false;
+  for (
+    let box = range.startContainer.parentElement.closest(".note, .deepen, .def");
+    box;
+    box = box.parentElement.closest(".note, .deepen, .def")
+  ) {
+    if (!box.classList.contains("open")) opened = true;
+    box.classList.add("open");
+  }
+  if (window.CSS && CSS.highlights)
+    CSS.highlights.set("search", new Highlight(range));
+  setTimeout(
+    () =>
+      range.startContainer.parentElement.scrollIntoView({
+        block: "center",
+        behavior: opened ? "smooth" : "auto",
+      }),
+    opened ? 500 : 0,
+  );
+}
+function clearSearchHighlight() {
+  if (window.CSS && CSS.highlights) CSS.highlights.delete("search");
+}
+
 // Light/dark theme. The script in index.html's <head> applies it before the
 // first paint. A choice that matches the system setting isn't stored, so the
 // page goes back to following the system.
@@ -294,4 +510,4 @@ SYSTEM_DARK.addEventListener("change", (e) => {
   if (!saved) setTheme(e.matches ? "dark" : "light");
 });
 setTheme(document.documentElement.dataset.theme);
-render();
+render(false);

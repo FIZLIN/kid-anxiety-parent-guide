@@ -22,9 +22,9 @@ UI and feature backlog for the book preview. Tick items off as they land.
 
 ### Must have
 
-- [ ] **Addresses for each page.** Put the page in the URL hash (`#ch2-sad`), read it on load and update it in `render()` (`js/book.js`). This makes pages shareable and bookmarkable, and makes the browser back button work.
-- [ ] **Full table-of-contents drawer.** Add a slide-out panel listing every page from `PAGES`, grouped by chapter, with the current page highlighted.
-- [ ] **Search.** Client-side search across all pages; they're already fetched into the DOM, so no backend is needed.
+- [x] **Addresses for each page.** Put the page in the URL hash (`#ch2-sad`), read it on load and update it in `render()` (`js/book.js`). This makes pages shareable and bookmarkable, and makes the browser back button work.
+- [x] **Full table-of-contents drawer.** Add a slide-out panel listing every page from `PAGES`, grouped by chapter, with the current page highlighted.
+- [x] **Search.** Client-side search across all pages; they're already fetched into the DOM, so no backend is needed.
 
 ### High value
 

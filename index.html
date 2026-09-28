@@ -47,7 +47,7 @@
 
     <div class="nav">
       <button id="prev" onclick="prev()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span class="label">Назад</span></button>
-      <button class="home" onclick="goTo('contents')"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="label">Съдържание</span></button>
+      <button class="home" onclick="openToc()" aria-haspopup="dialog" title="Съдържание и търсене"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="label">Съдържание</span></button>
       <span class="nav-slot">
         <span class="pageno" id="pageno"></span>
         <span class="pagepos" id="pagepos"></span>
@@ -58,6 +58,25 @@
     </div>
   </div>
 </div>
+
+<!-- contents drawer and search; filled by book.js -->
+<dialog class="toc" id="toc" aria-labelledby="toc-title">
+  <div class="toc-panel">
+    <div class="toc-head">
+      <h2 id="toc-title">Съдържание</h2>
+      <button class="toc-close" onclick="toc.close()" aria-label="Затвори"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <label class="toc-search">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+      <input type="search" id="toc-q" placeholder="Търсене в книгата" aria-label="Търсене в книгата" aria-controls="toc-results" autocomplete="off" enterkeyhint="search">
+    </label>
+    <nav class="toc-list" id="toc-list" aria-label="Страници"></nav>
+    <div class="toc-results" id="toc-results" hidden>
+      <p class="toc-count" id="toc-count" aria-live="polite"></p>
+      <div id="toc-hits"></div>
+    </div>
+  </div>
+</dialog>
 
 <script src="js/book.js"></script>
 </body>
