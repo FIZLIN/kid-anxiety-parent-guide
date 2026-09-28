@@ -4,6 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Смелост на малки глътки</title>
+<meta name="description" content="Наръчник за родители на тревожни деца: какво се случва в мозъка и тялото на детето, когато го обземе тревога, и как можем да помогнем.">
+<meta name="theme-color" content="#4c4d64">
+<link rel="icon" href="images/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="images/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<!-- TODO: make og:url and og:image absolute (https://<domain>/…) once the site
+     has a domain; most link-preview services ignore relative image paths. -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="bg_BG">
+<meta property="og:site_name" content="Смелост на малки глътки">
+<meta property="og:title" content="Смелост на малки глътки">
+<meta property="og:description" content="Наръчник за родители на тревожни деца: какво се случва в мозъка и тялото на детето, когато го обземе тревога, и как можем да помогнем.">
+<meta property="og:url" content="/">
+<meta property="og:image" content="images/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Корицата на „Смелост на малки глътки“ — наръчник за родители на тревожни деца">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  // Set the theme before first paint: the saved choice, else the system setting.
+  // Kept in sync with THEME_KEY and toggleTheme() in js/book.js.
+  (function () {
+    var t = null;
+    try {
+      t = localStorage.getItem("book:theme");
+    } catch (e) {}
+    if (t !== "light" && t !== "dark")
+      t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.dataset.theme = t;
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
@@ -12,16 +43,18 @@
 <body>
 <div class="book">
   <div class="stage" id="stage">
-    <div class="runhead" id="runhead" hidden><span class="l"></span><span class="r"></span></div>
+    <div class="runhead" id="runhead" hidden><span class="l"></span><span class="r"></span><span class="progress" id="progress"></span></div>
 
     <div class="nav">
-      <button id="prev" onclick="prev()">Назад</button>
-      <button class="home" onclick="goTo('contents')" title="Съдържание">Съдържание</button>
+      <button id="prev" onclick="prev()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span class="label">Назад</span></button>
+      <button class="home" onclick="goTo('contents')"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="label">Съдържание</span></button>
       <span class="nav-slot">
         <span class="pageno" id="pageno"></span>
+        <span class="pagepos" id="pagepos"></span>
         <button class="back" id="back" onclick="goBack()" hidden></button>
       </span>
-      <button id="next" onclick="next()">Напред</button>
+      <button class="theme" onclick="toggleTheme()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/><g class="sun"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g></svg><span class="label" id="theme-label"></span></button>
+      <button id="next" onclick="next()"><span class="label">Напред</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
   </div>
 </div>

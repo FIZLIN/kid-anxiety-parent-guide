@@ -63,6 +63,18 @@ const PAGES = [
 ];
 const total = PAGES.length;
 
+// Where each page sits in its chapter, from the chN- file prefix, e.g.
+// "Глава I · 2/12" for ch1-alarm. Empty outside the chapters.
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+const chapterOf = (file) => +(/^ch(\d+)-/.exec(file) || [])[1] || 0;
+const POSITION = PAGES.map(({ file }) => {
+  const ch = chapterOf(file);
+  if (!ch) return "";
+  const inCh = PAGES.filter((p) => chapterOf(p.file) === ch);
+  const n = inCh.findIndex((p) => p.file === file) + 1;
+  return "Глава " + ROMAN[ch - 1] + " · " + n + "/" + inCh.length;
+});
+
 // Remember the open page (by file name, so it survives reordering) across reloads.
 // Storage can be unavailable (private mode, blocked site data), so failures are ignored.
 const STORAGE_KEY = "book:page";
@@ -102,6 +114,7 @@ PAGES.forEach(({ file }, i) => {
       el.classList.toggle("active", i === cur);
       pages[i].replaceWith(el);
       pages[i] = el;
+      if (i === cur) updateProgress();
     })
     .catch((e) => {
       console.log("Failed to load page " + file + ": " + e);
@@ -109,6 +122,24 @@ PAGES.forEach(({ file }, i) => {
         '<p class="load-error">Страницата не можа да се зареди. Опитайте да презаредите.</p>';
     });
 });
+// On phones the window scrolls rather than the page (see styles.css).
+const PHONE = matchMedia("(max-width: 600px)");
+function scroller() {
+  return PHONE.matches ? document.scrollingElement : pages[cur];
+}
+const progress = document.getElementById("progress");
+function updateProgress() {
+  const s = scroller(),
+    max = s.scrollHeight - s.clientHeight;
+  progress.style.transform =
+    "scaleX(" + (max > 0 ? Math.min(1, s.scrollTop / max) : 0) + ")";
+}
+// Scroll events don't bubble, so listen in the capture phase to catch the pages' own scrolling.
+document.addEventListener("scroll", updateProgress, {
+  capture: true,
+  passive: true,
+});
+window.addEventListener("resize", updateProgress);
 function pageIndex(p) {
   return typeof p === "number" ? p : PAGES.findIndex((x) => x.file === p);
 }
@@ -118,6 +149,7 @@ function render() {
   document.getElementById("prev").disabled = cur === 0;
   document.getElementById("next").disabled = cur === total - 1;
   document.getElementById("pageno").textContent = PAGES[cur].nav;
+  document.getElementById("pagepos").textContent = POSITION[cur];
   const rh = document.getElementById("runhead"),
     head = PAGES[cur].runhead;
   rh.hidden = !head;
@@ -125,8 +157,9 @@ function render() {
     rh.querySelector(".l").textContent = head[0];
     rh.querySelector(".r").textContent = head[1];
   }
-  if (pages[cur]) pages[cur].scrollTop = 0;
+  scroller().scrollTop = 0;
   document.getElementById("stage").scrollIntoView({ block: "nearest" });
+  updateProgress();
 }
 function next() {
   if (cur < total - 1) {
@@ -149,18 +182,19 @@ function goTo(p) {
 let backStack = null;
 function showBack() {
   const b = document.getElementById("back"),
-    pn = document.getElementById("pageno");
+    pn = document.getElementById("pageno"),
+    pos = document.getElementById("pagepos");
   if (backStack) {
     b.textContent = "Обратно към " + backStack.who;
     b.hidden = false;
-    pn.hidden = true;
+    pn.hidden = pos.hidden = true;
   } else {
     b.hidden = true;
-    pn.hidden = false;
+    pn.hidden = pos.hidden = false;
   }
 }
 function jump(i, who) {
-  backStack = { page: cur, scroll: pages[cur].scrollTop, who: who };
+  backStack = { page: cur, scroll: scroller().scrollTop, who: who };
   goTo(i);
   showBack();
   document.getElementById("stage").scrollIntoView({ block: "start" });
@@ -170,7 +204,7 @@ function goBack() {
   const t = backStack;
   backStack = null;
   goTo(t.page);
-  pages[cur].scrollTop = t.scroll;
+  scroller().scrollTop = t.scroll;
   showBack();
 }
 document.addEventListener("keydown", (e) => {
@@ -201,4 +235,63 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") next();
   if (e.key === "ArrowLeft") prev();
 });
+
+// Swipe left/right to turn pages. Only a quick, mostly horizontal stroke
+// counts, so vertical scrolling and pinch-zoom are left alone.
+let touch = null;
+stage.addEventListener(
+  "touchstart",
+  (e) => {
+    touch =
+      e.touches.length === 1
+        ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() }
+        : null;
+  },
+  { passive: true },
+);
+stage.addEventListener(
+  "touchend",
+  (e) => {
+    if (!touch) return;
+    const dx = e.changedTouches[0].clientX - touch.x,
+      dy = e.changedTouches[0].clientY - touch.y,
+      quick = Date.now() - touch.t < 600;
+    touch = null;
+    if (!quick || Math.abs(dx) < 60 || Math.abs(dx) < 1.5 * Math.abs(dy))
+      return;
+    if (dx < 0) next();
+    else prev();
+  },
+  { passive: true },
+);
+
+// Light/dark theme. The script in index.html's <head> applies it before the
+// first paint. A choice that matches the system setting isn't stored, so the
+// page goes back to following the system.
+const THEME_KEY = "book:theme";
+const SYSTEM_DARK = matchMedia("(prefers-color-scheme: dark)");
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  const label = t === "dark" ? "Светла тема" : "Тъмна тема";
+  document.getElementById("theme-label").textContent = label;
+  document.querySelector(".nav .theme").title = label;
+}
+function toggleTheme() {
+  const t =
+    document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  setTheme(t);
+  try {
+    if (t === (SYSTEM_DARK.matches ? "dark" : "light"))
+      localStorage.removeItem(THEME_KEY);
+    else localStorage.setItem(THEME_KEY, t);
+  } catch (e) {}
+}
+SYSTEM_DARK.addEventListener("change", (e) => {
+  let saved = null;
+  try {
+    saved = localStorage.getItem(THEME_KEY);
+  } catch (err) {}
+  if (!saved) setTheme(e.matches ? "dark" : "light");
+});
+setTheme(document.documentElement.dataset.theme);
 render();

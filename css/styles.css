@@ -9,11 +9,47 @@
   --moss: #6c7a33;
   --moss-deep: #5a6529;
   --moss-soft: #eceedd;
+  --moss-softer: #eff1e4;
+  /* raised panels (figures, deep-dives, cards) */
+  --card: #fff;
+  /* numbers of chapters that aren't out yet */
+  --faint: #b9b8c4;
+  /* dark panels with light text (cover, practice); stay dark in both themes */
+  --deep: #4c4d64;
+  --page-edge-1: #cbcad2;
+  --page-edge-2: #d6d5dc;
+  --shadow: rgba(38, 37, 48, 0.22);
   --display: "Fraunces", Georgia, serif;
   --body: "Lora", Georgia, serif;
 
   --height: 80vh;
   --width: 700px;
+  /* side padding of the page text */
+  --gutter: 2.6rem;
+  color-scheme: light;
+}
+/* data-theme is set by the script in index.html's <head>, from the saved
+   choice or the system setting. Every colour is a token, so dark mode only
+   redefines them; the page SVGs are mapped onto tokens further down. */
+:root[data-theme="dark"] {
+  --bg: #131318;
+  --page: #1d1d24;
+  --ink: #e6e4ec;
+  --lilac-deep: #bebfd8;
+  --lilac: #9798b2;
+  --lilac-soft: #2f2f3c;
+  --line: #3a3a47;
+  --moss: #a3b168;
+  --moss-deep: #bccb82;
+  --moss-soft: #2a301f;
+  --moss-softer: #262b1c;
+  --card: #25252d;
+  --faint: #5a5a68;
+  --deep: #34354a;
+  --page-edge-1: #0e0e12;
+  --page-edge-2: #16161b;
+  --shadow: rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
 }
 * {
   box-sizing: border-box;
@@ -48,9 +84,9 @@ body {
   position: relative;
   background: var(--page);
   box-shadow:
-    -5px 0 0 -2px #cbcad2,
-    -9px 0 0 -4px #d6d5dc,
-    0 14px 44px rgba(38, 37, 48, 0.22);
+    -5px 0 0 -2px var(--page-edge-1),
+    -9px 0 0 -4px var(--page-edge-2),
+    0 14px 44px var(--shadow);
   border-left: 3px solid var(--lilac-deep);
   height: var(--height);
   overflow: hidden;
@@ -62,7 +98,7 @@ body {
   display: none;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 2rem 2.6rem 6rem;
+  padding: 2rem var(--gutter) 6rem;
 }
 .page.active {
   display: block;
@@ -91,13 +127,28 @@ body {
   font-size: 12.5px;
   color: var(--lilac);
   letter-spacing: 0.2px;
-  margin: 0 2.6rem;
+  margin: 0 var(--gutter);
   padding-top: 3rem;
   padding-bottom: 0.8rem;
   border-bottom: 1px solid var(--line);
 }
 .runhead[hidden] {
   display: none;
+}
+/* reading progress through the current page, drawn over the bottom border;
+   book.js sets the scaleX */
+.runhead {
+  position: relative;
+}
+.runhead .progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--moss);
+  transform: scaleX(0);
+  transform-origin: left;
 }
 .runhead .r {
   font-style: italic;
@@ -116,7 +167,7 @@ body {
 
 /* cover */
 .cover {
-  background: var(--lilac-deep);
+  background: var(--deep);
   color: #f3f2f6;
   display: flex;
   flex-direction: column;
@@ -166,11 +217,41 @@ body {
   padding-top: 1.3rem;
   max-width: 38ch;
 }
+.cover .start {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--body);
+  font-size: 15px;
+  color: #f3f2f6;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 2px;
+  padding: 10px 14px 10px 18px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.cover .start:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--moss);
+}
+.cover .start .icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .cover .open {
   font-size: 13px;
   color: #c6c7d6;
   font-style: italic;
-  margin-top: 2.2rem;
+  margin-top: 1rem;
 }
 
 h2.chapter-title {
@@ -284,7 +365,7 @@ h3.sub {
   background: none;
 }
 .map-item.soon .n {
-  color: #b9b8c4;
+  color: var(--faint);
 }
 .map-item.soon .t {
   color: var(--lilac-deep);
@@ -371,7 +452,7 @@ h3.sub {
   cursor: default;
 }
 .toc-chapter.soon .rn {
-  color: #b9b8c4;
+  color: var(--faint);
 }
 .toc-chapter.soon .ct {
   color: var(--lilac);
@@ -409,7 +490,7 @@ h3.sub {
 /* figure */
 .figure {
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--card);
   padding: 1.4rem 1.1rem 0.8rem;
   margin: 1.7rem 0 0.6rem;
 }
@@ -558,7 +639,7 @@ h3.sub {
 .deepen {
   border: 1px solid var(--line);
   border-left: 3px solid var(--lilac-deep);
-  background: #fff;
+  background: var(--card);
   margin: 1.7rem 0;
 }
 .deepen-head {
@@ -659,7 +740,7 @@ h3.sub {
 
 /* practice counsel */
 .practice {
-  background: var(--lilac-deep);
+  background: var(--deep);
   color: #efeef3;
   padding: 1.4rem 1.5rem;
   margin-top: 1.8rem;
@@ -668,7 +749,7 @@ h3.sub {
   font-variant: small-caps;
   letter-spacing: 1.4px;
   font-size: 13px;
-  color: var(--moss-soft);
+  color: #eceedd;
   margin-bottom: 0.55rem;
 }
 .practice p {
@@ -740,7 +821,7 @@ h3.sub {
 .vcard {
   border: 1px solid var(--line);
   border-left: 3px solid var(--moss);
-  background: #fff;
+  background: var(--card);
   padding: 1.4rem 1.5rem;
   margin: 1.3rem 0;
   display: flex;
@@ -829,11 +910,14 @@ h3.sub {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 15px 2.6rem;
+  padding: 15px var(--gutter);
   background: var(--page);
   border-top: 1px solid var(--line);
 }
 .nav button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: none;
   border: none;
   cursor: pointer;
@@ -843,6 +927,9 @@ h3.sub {
   padding: 6px 2px;
   transition: color 0.15s;
 }
+.nav button[hidden] {
+  display: none;
+}
 .nav button:hover:not(:disabled) {
   color: var(--ink);
 }
@@ -850,10 +937,33 @@ h3.sub {
   opacity: 0.3;
   cursor: default;
 }
-.nav .home {
-  font-variant: small-caps;
-  letter-spacing: 1px;
-  color: var(--lilac);
+.nav .icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nav .home .icon {
+  width: 16px;
+  height: 16px;
+}
+/* the theme button shows the theme it switches to */
+:root[data-theme="dark"] .nav .theme .moon,
+:root:not([data-theme="dark"]) .nav .theme .sun {
+  display: none;
+}
+/* visually hidden, still read by screen readers */
+.nav .theme .label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 /* Holds the page label or the back button. Fixed width so the buttons
    around it never move: 224px fits the longest text, "Обратно към
@@ -865,19 +975,39 @@ h3.sub {
   text-align: center;
 }
 .pageno {
+  display: block;
   font-size: 12.5px;
   color: var(--lilac);
   font-style: italic;
 }
+.pagepos {
+  display: block;
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  font-size: 11px;
+  color: var(--lilac);
+  opacity: 0.8;
+}
+.pageno[hidden],
+.pagepos[hidden],
+.pagepos:empty {
+  display: none;
+}
 
+/* The class colour is only a default: a label with its own fill="…" keeps it
+   (CSS would otherwise beat the attribute, e.g. light text on a dark node). */
 .svg-label {
   font-family: "Lora", Georgia, serif;
   font-size: 12px;
+}
+.svg-label:not([fill]) {
   fill: var(--ink);
 }
 .svg-label-sm {
   font-family: "Lora", Georgia, serif;
   font-size: 10.5px;
+}
+.svg-label-sm:not([fill]) {
   fill: var(--lilac-deep);
 }
 .svg-title {
@@ -1021,16 +1151,86 @@ h3.sub {
   box-shadow: 0 0 0 2px var(--moss);
 }
 
-@media (max-width: 480px) {
-  .page {
-    padding: 2rem 1.5rem 6rem;
+/* Phones: the book fills the screen and the window scrolls, instead of a
+   fixed-height box with its own scroll area. The running head and nav stick
+   to the top and bottom. Keep the width in sync with PHONE in book.js. */
+@media (max-width: 600px) {
+  html,
+  body {
+    height: auto;
+  }
+  body {
+    display: block;
+    padding: 0;
+  }
+  .stage {
+    box-shadow: none;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    /* visible, not hidden, so the sticky head and nav work */
+    overflow: visible;
+  }
+  .page,
+  .page.scroll {
+    overflow: visible;
+    overflow-x: clip;
+    padding-bottom: 2.5rem;
   }
   .runhead {
-    margin: 0 1.5rem;
-    padding-top: 2.2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--page);
+    margin: 0;
+    padding: 0.9rem var(--gutter) 0.7rem;
   }
   .nav {
-    padding: 15px 1.5rem;
+    position: sticky;
+    z-index: 1;
+    gap: 0.5rem;
+    padding: 4px 0.75rem;
+  }
+  .nav button {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .nav .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .nav-slot {
+    flex: 1 1 auto;
+  }
+  /* one line, so title + position fit the slot's two; the full title is in
+     the running head */
+  .pageno {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Diagrams are drawn 340 units wide and scale with the figure, so every
+     pixel of width makes their labels bigger. Let top-level figures run to
+     the screen edges (nested ones, e.g. in a deep-dive, keep their box). */
+  .page > .figure {
+    margin-left: calc(-1 * var(--gutter));
+    margin-right: calc(-1 * var(--gutter));
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border-left: none;
+    border-right: none;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --gutter: 1.5rem;
   }
   /* The slot is too narrow here for the longer texts, so they wrap. Always
      reserve two lines (2 × 1.6 line-height) so the nav keeps one height. */
@@ -1061,4 +1261,139 @@ h3.sub {
 .load-error {
   font-style: italic;
   color: var(--lilac);
+}
+
+/* Dark theme for the page SVGs. Their colours are written in as the light
+   palette's hex values (fill="#6C7A33", style="fill:#FBFAF6"…), so each one
+   is pointed at its token here. Inline styles need !important to be beaten.
+   Add a line if a page SVG starts using a new colour. */
+[data-theme="dark"] .page svg [fill="#6C7A33" i] {
+  fill: var(--moss);
+}
+[data-theme="dark"] .page svg [stroke="#6C7A33" i] {
+  stroke: var(--moss);
+}
+[data-theme="dark"] .page svg [stop-color="#6C7A33" i] {
+  stop-color: var(--moss);
+}
+[data-theme="dark"] .page svg [style*="fill:#6C7A33" i] {
+  fill: var(--moss) !important;
+}
+[data-theme="dark"] .page svg [fill="#5A6529" i] {
+  fill: var(--moss-deep);
+}
+[data-theme="dark"] .page svg [stroke="#5A6529" i] {
+  stroke: var(--moss-deep);
+}
+[data-theme="dark"] .page svg [stop-color="#5A6529" i] {
+  stop-color: var(--moss-deep);
+}
+[data-theme="dark"] .page svg [style*="fill:#5A6529" i] {
+  fill: var(--moss-deep) !important;
+}
+[data-theme="dark"] .page svg [fill="#ECEEDD" i] {
+  fill: var(--moss-soft);
+}
+[data-theme="dark"] .page svg [stroke="#ECEEDD" i] {
+  stroke: var(--moss-soft);
+}
+[data-theme="dark"] .page svg [stop-color="#ECEEDD" i] {
+  stop-color: var(--moss-soft);
+}
+[data-theme="dark"] .page svg [style*="fill:#ECEEDD" i] {
+  fill: var(--moss-soft) !important;
+}
+[data-theme="dark"] .page svg [fill="#EFF1E4" i] {
+  fill: var(--moss-softer);
+}
+[data-theme="dark"] .page svg [stroke="#EFF1E4" i] {
+  stroke: var(--moss-softer);
+}
+[data-theme="dark"] .page svg [stop-color="#EFF1E4" i] {
+  stop-color: var(--moss-softer);
+}
+[data-theme="dark"] .page svg [style*="fill:#EFF1E4" i] {
+  fill: var(--moss-softer) !important;
+}
+[data-theme="dark"] .page svg [fill="#4C4D64" i] {
+  fill: var(--lilac-deep);
+}
+[data-theme="dark"] .page svg [stroke="#4C4D64" i] {
+  stroke: var(--lilac-deep);
+}
+[data-theme="dark"] .page svg [stop-color="#4C4D64" i] {
+  stop-color: var(--lilac-deep);
+}
+[data-theme="dark"] .page svg [style*="fill:#4C4D64" i] {
+  fill: var(--lilac-deep) !important;
+}
+[data-theme="dark"] .page svg [fill="#7E7F9A" i] {
+  fill: var(--lilac);
+}
+[data-theme="dark"] .page svg [stroke="#7E7F9A" i] {
+  stroke: var(--lilac);
+}
+[data-theme="dark"] .page svg [stop-color="#7E7F9A" i] {
+  stop-color: var(--lilac);
+}
+[data-theme="dark"] .page svg [style*="fill:#7E7F9A" i] {
+  fill: var(--lilac) !important;
+}
+[data-theme="dark"] .page svg [fill="#E8E7ED" i] {
+  fill: var(--lilac-soft);
+}
+[data-theme="dark"] .page svg [stroke="#E8E7ED" i] {
+  stroke: var(--lilac-soft);
+}
+[data-theme="dark"] .page svg [stop-color="#E8E7ED" i] {
+  stop-color: var(--lilac-soft);
+}
+[data-theme="dark"] .page svg [style*="fill:#E8E7ED" i] {
+  fill: var(--lilac-soft) !important;
+}
+[data-theme="dark"] .page svg [fill="#FBFAF6" i] {
+  fill: var(--page);
+}
+[data-theme="dark"] .page svg [stroke="#FBFAF6" i] {
+  stroke: var(--page);
+}
+[data-theme="dark"] .page svg [stop-color="#FBFAF6" i] {
+  stop-color: var(--page);
+}
+[data-theme="dark"] .page svg [style*="fill:#FBFAF6" i] {
+  fill: var(--page) !important;
+}
+[data-theme="dark"] .page svg [fill="#D9D7D1" i] {
+  fill: var(--line);
+}
+[data-theme="dark"] .page svg [stroke="#D9D7D1" i] {
+  stroke: var(--line);
+}
+[data-theme="dark"] .page svg [stop-color="#D9D7D1" i] {
+  stop-color: var(--line);
+}
+[data-theme="dark"] .page svg [style*="fill:#D9D7D1" i] {
+  fill: var(--line) !important;
+}
+[data-theme="dark"] .page svg [fill="#262530" i] {
+  fill: var(--ink);
+}
+[data-theme="dark"] .page svg [stroke="#262530" i] {
+  stroke: var(--ink);
+}
+[data-theme="dark"] .page svg [stop-color="#262530" i] {
+  stop-color: var(--ink);
+}
+[data-theme="dark"] .page svg [style*="fill:#262530" i] {
+  fill: var(--ink) !important;
+}
+/* the one photo-like illustration: take the glare off on a dark page */
+[data-theme="dark"] .figure.illus img {
+  filter: brightness(0.88);
+}
+
+/* keyboard focus; mouse clicks don't show it */
+:is(button, a, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--moss);
+  outline-offset: 2px;
 }
