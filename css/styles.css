@@ -259,6 +259,27 @@ body {
   font-style: italic;
   margin-top: 1rem;
 }
+.cover-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem 1.6rem;
+}
+.cover-help {
+  background: none;
+  border: none;
+  border-bottom: 1px dotted #c9d19a;
+  padding: 2px 0;
+  font-family: var(--body);
+  font-size: 14px;
+  color: #dfe5b8;
+  text-align: left;
+  cursor: pointer;
+}
+.cover-help:hover {
+  color: #fff;
+  border-bottom-color: #fff;
+}
 
 h2.chapter-title {
   font-family: var(--display);
@@ -772,7 +793,62 @@ h3.sub {
   color: #efeef3;
   max-width: none;
 }
+/* links in the dark box: the usual link colours would match its background */
+.practice a.xref,
+.practice a.seesrc,
+.practice a.tel {
+  color: #eceedd;
+  border-bottom-color: #eceedd;
+}
+.practice a.xref:hover,
+.practice a.xref:focus,
+.practice a.seesrc:hover,
+.practice a.tel:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
 
+/* a way to the help page from within the book (contents, chapter maps,
+   ch5-help) */
+.help-cta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin-top: 2rem;
+  padding: 0.95rem 1.15rem;
+  background: var(--moss-soft);
+  border: none;
+  border-left: 3px solid var(--moss);
+  font-family: var(--body);
+  text-align: left;
+  color: var(--moss-deep);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.help-cta:hover {
+  background: var(--moss-softer);
+}
+.help-cta .icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+.help-cta .t {
+  font-family: var(--display);
+  font-size: 17px;
+  line-height: 1.3;
+}
+.help-cta .s {
+  display: block;
+  font-family: var(--body);
+  font-size: 13.5px;
+  color: var(--lilac-deep);
+  margin-top: 0.15rem;
+}
 /* clinical caution */
 .caution {
   border: 1px solid var(--moss);
@@ -923,6 +999,7 @@ h3.sub {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.25rem;
   padding: 15px var(--gutter);
   background: var(--page);
   border-top: 1px solid var(--line);
@@ -965,6 +1042,23 @@ h3.sub {
   width: 16px;
   height: 16px;
 }
+/* The way to the help page, always at hand: the one filled control in the
+   nav, so it's easy to find. */
+.nav .help {
+  color: var(--page);
+  background: var(--moss-deep);
+  border-radius: 999px;
+  padding: 6px 13px 6px 10px;
+}
+.nav .help:hover:not(:disabled) {
+  color: var(--page);
+  background: var(--moss);
+}
+.nav .help[aria-current="page"] {
+  color: var(--moss-deep);
+  background: var(--moss-soft);
+  cursor: default;
+}
 /* the theme button shows the theme it switches to */
 :root[data-theme="dark"] .nav .theme .moon,
 :root:not([data-theme="dark"]) .nav .theme .sun {
@@ -979,20 +1073,31 @@ h3.sub {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-/* Holds the page label or the back button. Fixed width so the buttons
-   around it never move: 224px fits the longest text, "Обратно към
-   коморбидността" (222.9px in Lora italic 14.5px). Re-measure if a longer
-   back label is added. On narrow screens it shrinks and the text wraps. */
+/* Holds the page label or the back button, and takes the room the buttons
+   leave. */
 .nav-slot {
   flex: 0 1 224px;
   min-width: 0;
   text-align: center;
+  /* Always two lines high, whether it shows a title and position, a title
+     alone (help, contents) or the back button, so the nav keeps one height. */
+  height: 38px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 .pageno {
   display: block;
   font-size: 12.5px;
   color: var(--lilac);
   font-style: italic;
+  /* one line, so title + position fit the slot's two; the full title is in
+     the running head */
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .pagepos {
   display: block;
@@ -1081,6 +1186,25 @@ html:has(.toc[open]) {
   gap: 4px;
   margin: 0 1.4rem 0.8rem;
   color: var(--lilac-deep);
+}
+.toc-help {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 1.4rem 0.9rem;
+  padding: 0.6rem 0.8rem;
+  width: calc(100% - 2.8rem);
+  background: var(--moss-soft);
+  border: none;
+  border-left: 3px solid var(--moss);
+  font-family: var(--body);
+  font-size: 15px;
+  color: var(--moss-deep);
+  text-align: left;
+  cursor: pointer;
+}
+.toc-help:hover {
+  color: var(--ink);
 }
 .toc-settings .lab {
   flex: 1;
@@ -1381,17 +1505,38 @@ html:has(.toc[open]) {
     background 0.15s,
     color 0.15s;
 }
+/* a phone number in running text; calls it on a phone */
+.tel {
+  color: var(--moss-deep);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 1px dotted var(--moss);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.tel:hover {
+  color: var(--ink);
+  background: var(--moss-soft);
+}
 .xref:hover,
 .xref:focus {
   color: var(--ink);
   background: var(--lilac-soft);
   outline: none;
 }
+/* at most two lines, to fit the slot; a longer label ends in "…" */
 .nav .back {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  max-width: 100%;
+  line-height: 1.25;
   font-style: italic;
   color: var(--moss-deep);
   border-bottom: 1px dotted var(--moss);
-  padding: 2px 2px;
+  padding: 0 2px;
 }
 .nav .back:hover {
   color: var(--ink);
@@ -1434,13 +1579,10 @@ html:has(.toc[open]) {
     background: var(--page);
     margin: 0;
     padding: 0.9rem var(--gutter) 0.7rem;
-    /* room for the help ribbon */
-    padding-right: max(var(--gutter), 46px);
   }
   .nav {
     position: sticky;
     z-index: 1;
-    gap: 0.5rem;
     padding: 4px 0.75rem;
   }
   .nav button {
@@ -1459,13 +1601,31 @@ html:has(.toc[open]) {
   .nav-slot {
     flex: 1 1 auto;
   }
-  /* one line, so title + position fit the slot's two; the full title is in
-     the running head */
-  .pageno {
-    max-width: 100%;
-    white-space: nowrap;
+  /* The slot is too narrow for "Обратно към <page>" in two lines, so the
+     words are only read out and an arrow stands in for them. */
+  .nav .back .back-to {
+    position: absolute;
+    width: 1px;
+    height: 1px;
     overflow: hidden;
-    text-overflow: ellipsis;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* icon only, as a filled circle inside the 44px tap target */
+  .nav .help {
+    padding: 0;
+    background: radial-gradient(circle, var(--moss-deep) 17px, transparent 17.5px);
+  }
+  .nav .help:hover:not(:disabled) {
+    background: radial-gradient(circle, var(--moss) 17px, transparent 17.5px);
+  }
+  .nav .help[aria-current="page"] {
+    background: radial-gradient(circle, var(--moss-soft) 17px, transparent 17.5px);
+  }
+  .nav .back::before {
+    content: "↩\00a0";
+    content: "↩\00a0" / "";
+    font-style: normal;
   }
   /* Diagrams are drawn 340 units wide and scale with the figure, so every
      pixel of width makes their labels bigger. Let top-level figures run to
@@ -1483,15 +1643,6 @@ html:has(.toc[open]) {
 @media (max-width: 480px) {
   :root {
     --gutter: 1.5rem;
-  }
-  /* The slot is too narrow here for the longer texts, so they wrap. Always
-     reserve two lines (2 × 1.6 line-height) so the nav keeps one height. */
-  .nav-slot {
-    min-height: 3.2em;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
   }
   .cover {
     padding: 2.6rem 1.8rem;
@@ -1665,7 +1816,7 @@ html:has(.toc[open]) {
   outline: none;
 }
 
-/* --- глава пета: рафт с книги и по-дълги бележки --- */
+/* chapter V: book cards on the shelf page */
 .shelf{display:block;border:1px solid var(--line);border-left:3px solid var(--lilac-deep);background:var(--card);padding:.95rem 1.2rem;margin:.6rem 0;}
 .shelf.kid{border-left-color:var(--moss);}
 .shelf .lab{font-variant:small-caps;letter-spacing:1.1px;font-size:12px;color:var(--lilac-deep);display:block;margin-bottom:.3rem;}
@@ -1674,22 +1825,7 @@ html:has(.toc[open]) {
 .shelf .rep{font-size:13.5px;line-height:1.65;color:var(--ink);margin-top:.35rem;display:block;}
 .page[data-page^="ch5"] .note.open .note-body{max-height:900px;}
 
-/* ═══════ страница „Кога да потърсим специалист“ и лентичката към нея ═══════ */
-  /* ═══ лентичка-разделител: винаги под ръка ═══ */
-  .ribbon{
-    position:absolute;top:0;right:10px;z-index:6;width:28px;height:72px;
-    background:var(--moss);color:var(--page);border:none;cursor:pointer;padding:10px 0 0;
-    clip-path:polygon(0 0,100% 0,100% 100%,50% 82%,0 100%);
-    display:flex;justify-content:center;align-items:flex-start;
-    font-family:var(--body);font-size:12px;letter-spacing:1.4px;font-variant:small-caps;
-    writing-mode:vertical-rl;transition:height .25s ease,background .2s ease;
-  }
-  .ribbon span{writing-mode:vertical-rl;}
-  .ribbon:hover,.ribbon:focus-visible{height:84px;background:var(--moss-deep);outline:none;}
-  .ribbon[aria-current="page"]{height:96px;background:var(--moss-deep);cursor:default;}
-  @media(prefers-reduced-motion:reduce){.ribbon{transition:none;}}
-
-  /* ═══ страница „Кога да потърсим специалист“ ═══ */
+/* help page */
   .urgent{background:var(--deep);color:#EFEEF3;padding:1.2rem 1.4rem 1.3rem;margin:0 0 2.2rem;}
   .urgent .lab{font-variant:small-caps;letter-spacing:1.4px;font-size:13px;color:#eceedd;margin-bottom:.7rem;}
   .urgent .calls{display:grid;grid-template-columns:1fr 1.25fr;gap:1rem 1.4rem;}
@@ -1741,18 +1877,11 @@ html:has(.toc[open]) {
   .hl-txt a{color:var(--moss-deep);}
   .hl-txt .when{display:block;font-size:13px;font-style:italic;color:var(--lilac);margin-top:.3rem;}
 
-  .toc-chapter .rn.mark{font-family:var(--display);font-size:22px;color:var(--moss-deep);font-variant:normal;letter-spacing:0;line-height:1;}
-
   @media(max-width:480px){
-    .ribbon{right:5px;width:23px;height:64px;font-size:11px;}
-    .ribbon:hover,.ribbon:focus-visible{height:74px;}
-    .ribbon[aria-current="page"]{height:84px;}
-    .runhead{padding-right:36px;}
     .urgent .calls{grid-template-columns:1fr;}
     .hl-row{grid-template-columns:1fr;gap:.25rem;}
   }
 
-  /* разширена страница за помощ */
   .urgent .call .n.n-sm{font-size:24px;line-height:1.15;}
   .help-h{margin-top:2.8rem;padding-top:1.4rem;border-top:1px solid var(--line);scroll-margin-top:1rem;}
   .ages{margin:.4rem 0 .2rem;}
@@ -1770,7 +1899,7 @@ html:has(.toc[open]) {
   .path-quiet .stop .x{color:var(--lilac);}
   @media(max-width:480px){.agerow{grid-template-columns:1fr;gap:.15rem;}}
 
-  /* разгъващ се списък за проверка */
+  /* checklist items with an explanation that expands */
   .check .ck{display:grid;grid-template-columns:1fr auto;border-bottom:1px solid var(--line);}
   .check .ck-sub+.ck,.check .check-group+.ck{border-top:1px solid var(--line);}
   .check .ck .ck-row{border:none;padding:11px 2px;}
@@ -1791,7 +1920,7 @@ html:has(.toc[open]) {
   @media(prefers-reduced-motion:reduce){.check .ck-body,.check .ck-more span{transition:none;}}
   @media(max-width:480px){.check .ck-body .inner{margin-left:2px;}.check .ck-more{width:38px;margin-right:8px;}}
 
-  /* резюме според отметките */
+  /* the summary of ticked signs, built by book.js */
   .verdict .v-sec{font-variant:small-caps;letter-spacing:1.2px;font-size:12.5px;color:var(--lilac-deep);margin:1rem 0 .35rem;}
   .verdict .v-list{margin:0;padding-left:1.1rem;}
   .verdict .v-list li{font-size:14.5px;line-height:1.65;margin-bottom:.3rem;}
@@ -1804,7 +1933,7 @@ html:has(.toc[open]) {
   .verdict .v-copy{margin-top:1rem;background:none;border:1px solid var(--line);font-family:var(--body);font-size:13.5px;color:var(--lilac-deep);padding:6px 12px;cursor:pointer;}
   .verdict .v-copy:hover,.verdict .v-copy:focus-visible{background:var(--page);border-color:var(--lilac);outline:none;}
 
-  /* отделно падащо блокче за мисли за смърт */
+  /* the deep-dive on a child talking about death */
   .deepen.deepen-grave{margin:2rem 0 .6rem;border-left-color:var(--lilac-deep);scroll-margin-top:1rem;}
   .deepen.deepen-grave .deepen-head{background:var(--lilac-soft);}
   .deepen.deepen-grave .deepen-body .inner{padding-top:.6rem;}

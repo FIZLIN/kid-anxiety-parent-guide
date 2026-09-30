@@ -1,4 +1,4 @@
-/* ─── Глава VI: карта на съкровищата ─── */
+/* chapter VI map (pages/ch6-map.html, drawn by js/ch6-map.js) */
 .k6-mapwrap{margin:2rem -1rem 0;}
 @media (max-width:520px){.k6-mapwrap{margin:1.6rem -.6rem 0;}}
 .k6-map{display:block;width:100%;height:auto;border:1px solid var(--line);background:var(--lilac-soft);}
@@ -6,6 +6,8 @@
 .k6-map .coast{fill:none;stroke:var(--lilac);stroke-width:.8;stroke-dasharray:2 5;opacity:.55;}
 .k6-map .wave{fill:none;stroke:var(--lilac);stroke-width:1.1;stroke-linecap:round;opacity:.45;}
 .k6-map .iname{font-family:var(--display);font-style:italic;font-size:15px;fill:var(--lilac-deep);}
+/* an outline in the sea colour keeps the names clear of the coasts and paths nearby */
+.k6-map .iname{paint-order:stroke;stroke:var(--lilac-soft);stroke-width:4px;stroke-linejoin:round;}
 .k6-map .seg{fill:none;stroke-width:2;stroke-linecap:round;}
 .k6-map .seg.ahead{stroke:var(--lilac);stroke-dasharray:1.5 7;opacity:.55;}
 .k6-map .seg.walked{stroke:var(--lilac-deep);stroke-dasharray:7 6;}
@@ -36,7 +38,7 @@
 .k6-tally .big small{font-size:15px;color:var(--lilac);font-family:var(--body);font-style:italic;letter-spacing:0;}
 .k6-link{background:none;border:none;font-family:var(--body);font-size:13px;color:var(--lilac);font-style:italic;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
 
-/* падащите дни */
+/* days */
 .k6-isle{font-family:var(--display);font-style:italic;font-weight:400;font-size:19px;color:var(--lilac-deep);
   display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin:2.2rem 0 .5rem;}
 .k6-isle span{font-family:var(--body);font-size:13px;color:var(--lilac);}
@@ -80,7 +82,7 @@
 .k6-stamp{font-family:var(--display);font-style:italic;color:var(--moss-deep);font-size:15px;}
 .k6-gentle{font-size:13.5px !important;color:var(--lilac);font-style:italic;margin-top:.9rem !important;}
 
-/* блокчето с цялата идея използва .deepen от книгата */
+/* the intro deep-dive (#k6-intro) is a regular .deepen */
 #k6-intro.open .deepen-body{max-height:6000px;}
 #k6-intro h4{font-family:var(--display);font-weight:400;font-size:17px;color:var(--lilac-deep);margin:1.4rem 0 .45rem;}
 #k6-intro h4:first-child{margin-top:.2rem;}

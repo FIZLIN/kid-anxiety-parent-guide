@@ -1,12 +1,11 @@
-// ═══ Глава шеста: карта на съкровищата ═══
-// Страницата pages/ch6-map.html се зарежда асинхронно от book.js,
-// затова картата се стартира, когато book.js съобщи, че страницата е в DOM.
+// The chapter VI map. book.js fetches pages/ch6-map.html, so the map starts
+// from its book:pageload event.
 (function(){
 const ISLANDS=[
-  {name:'Островът на Наблюдението',label:[36,262,'start']},
-  {name:'Островът на Спокойното тяло',label:[500,168,'end'],lines:['Островът на','Спокойното тяло']},
-  {name:'Островът на Думите',label:[30,622,'start']},
-  {name:'Островът на Стълбата',label:[488,538,'end']},
+  {name:'Островът на Наблюдението',label:[36,277,'start']},
+  {name:'Островът на Спокойното тяло',label:[500,160,'end'],lines:['Островът на','Спокойното тяло']},
+  {name:'Островът на Думите',label:[30,636,'start']},
+  {name:'Островът на Стълбата',label:[488,526,'end']},
   {name:'Заливът на Смелите',label:[260,988,'middle']}
 ];
 const P=[[90,140],[115,90],[175,75],[225,105],[200,155],[250,195],
@@ -53,7 +52,7 @@ function k6Init(){
 const NS='http://www.w3.org/2000/svg', KEY='smelost-karta-v1';
 const svg=document.getElementById('k6-map'), list=document.getElementById('k6-list');
 if(!svg||!list||svg.dataset.ready)return;svg.dataset.ready='1';
-let found=Array(30).fill(false), openSet=new Set(), cloud=null;
+let found=Array(30).fill(false), cloud=null;
 
 function readLocal(){try{const v=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(v)&&v.length===30)return v.map(Boolean);}catch(e){}return null;}
 function save(){
@@ -75,7 +74,7 @@ function seg(i){const q=j=>P[Math.max(0,Math.min(29,j))],p0=q(i-1),p1=q(i),p2=q(
 
 function drawStatic(){
   svg.innerHTML='';
-  [[40,330],[455,150],[470,480],[40,720],[450,860],[60,960]].forEach(([x,y])=>el('path',{class:'wave',d:`M${x},${y}q6,-6 12,0t12,0t12,0`}));
+  [[40,330],[455,126],[470,480],[40,720],[450,860],[60,960]].forEach(([x,y])=>el('path',{class:'wave',d:`M${x},${y}q6,-6 12,0t12,0t12,0`}));
   for(let g=0;g<5;g++){
     const pts=P.slice(g*6,g*6+6),cx=pts.reduce((s,p)=>s+p[0],0)/6,cy=pts.reduce((s,p)=>s+p[1],0)/6;
     const R=Math.max(...pts.map(p=>Math.hypot(p[0]-cx,p[1]-cy)))+22,o=[],inn=[];
@@ -95,6 +94,16 @@ function drawStatic(){
   el('g',{id:'k6-segs'});el('g',{id:'k6-xs'});
 }
 
+const NUM_GAP=22;
+// A day's number sits beside its X, across from the path and towards the
+// middle of the island, so it stays clear of both the path and the coast.
+function numAt(i){
+  const [x,y]=P[i],a=P[Math.max(0,i-1)],b=P[Math.min(29,i+1)],pts=P.slice(i-i%6,i-i%6+6);
+  const cx=pts.reduce((s,p)=>s+p[0],0)/6,cy=pts.reduce((s,p)=>s+p[1],0)/6;
+  const l=Math.hypot(b[0]-a[0],b[1]-a[1]);let nx=(a[1]-b[1])/l,ny=(b[0]-a[0])/l;
+  if((cx-x)*nx+(cy-y)*ny<0){nx=-nx;ny=-ny;}
+  return [x+nx*NUM_GAP,y+ny*NUM_GAP];
+}
 function drawMap(){
   const cur=current(),sg=document.getElementById('k6-segs'),xg=document.getElementById('k6-xs');
   sg.innerHTML='';xg.innerHTML='';
@@ -107,7 +116,7 @@ function drawMap(){
     if(st==='found')el('circle',{class:'ring',cx:x,cy:y,r:last?16:13},g);
     const s=last?10:(st==='todo'?6:7);
     el('path',{class:'x',d:`M${x-s},${y-s}L${x+s},${y+s}M${x+s},${y-s}L${x-s},${y+s}`},g);
-    const left=x<260;el('text',{class:'num',x:x+(left?-24:24),y:y+4,'text-anchor':left?'end':'start'},g).textContent=i+1;
+    const [nx,ny]=numAt(i);el('text',{class:'num',x:nx,y:ny,'text-anchor':'middle','dominant-baseline':'central'},g).textContent=i+1;
     g.addEventListener('click',()=>goDay(i));
     g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goDay(i);}});
   });
@@ -120,8 +129,13 @@ function icon(st){
   return '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 7l6 6M13 7l-6 6" stroke="#7E7F9A" stroke-width="2" stroke-linecap="round"/></svg>';
 }
 
-function drawList(){
-  const cur=current();let h='';
+// Open days are read from the list, so a day opened by the book's search
+// (setOpen in book.js) stays open.
+function openDays(){return new Set([...list.querySelectorAll('.k6-dd.open')].map(d=>+d.id.slice(4)));}
+// Rebuilding the list removes the button that was pressed, so focus goes
+// to the head of day focusDay.
+function drawList(openSet,focusDay){
+  let h='';
   for(let g=0;g<5;g++){
     const n=count(found.slice(g*6,g*6+6));
     h+=`<h3 class="k6-isle">${ISLANDS[g].name}<span>${n} от 6 намерени</span></h3>`;
@@ -132,7 +146,7 @@ function drawList(){
         <div class="k6-body" id="k6-b${i}"><div class="inner">
           <div class="k6-task"><p class="lab">Днешното съкровище</p><p>${task}</p></div>
           <div class="k6-why"><p class="lab">Защо това работи</p><p>${why}</p></div>
-          <p class="k6-src">Свързва се с раздела <a class="xref" href="#${link}" data-back="картата">„${pageName(link)}“</a>.${src?` <a class="seesrc" href="#k6-src1">(виж Източник 1)</a>`:'<br><span class="todo">Източник за този ден предстои да бъде добавен.</span>'}</p>
+          <p class="k6-src">Свързва се с раздела <a class="xref" href="#${link}" data-back="картата">„${pageName(link)}“</a>.${src?` <a class="seesrc" href="#map-src1">(виж Източник 1)</a>`:'<br><span class="todo">Източник за този ден предстои да бъде добавен.</span>'}</p>
           <div class="k6-actions">${found[i]
             ?`<span class="k6-stamp">Намерено</span><button class="k6-link" type="button" data-undo="${i}">Отмени</button>${i<29?`<button class="k6-btn ghost" type="button" data-go="${i+1}">Към ден ${i+2}</button>`:''}`
             :`<button class="k6-btn" type="button" data-mark="${i}">Намерихме го</button>`}</div>
@@ -141,10 +155,11 @@ function drawList(){
     }
   }
   list.innerHTML=h;
+  if(focusDay!=null)list.querySelector('#k6-d'+focusDay+' .k6-head').focus({preventScroll:true});
 }
 
 function pageName(f){try{const p=PAGES.find(x=>x.file===f);if(p)return p.runhead?p.runhead[1]:p.nav;}catch(e){}return f;}
-function render(){drawMap();drawList();}
+function render(openSet,focusDay){drawMap();drawList(openSet||new Set(),focusDay);}
 
 function scrollTo(i){
   const row=document.getElementById('k6-d'+i);if(!row)return;
@@ -153,26 +168,26 @@ function scrollTo(i){
   row.classList.remove('flash');void row.offsetWidth;row.classList.add('flash');
 }
 function goDay(i){
-  openSet.add(i);drawList();
+  const o=openDays();o.add(i);drawList(o);
   scrollTo(i);
 }
 
 list.addEventListener('click',e=>{
   const head=e.target.closest('.k6-head[data-i]');
-  if(head){const i=+head.dataset.i,row=head.parentElement,o=row.classList.toggle('open');
-    head.setAttribute('aria-expanded',o);o?openSet.add(i):openSet.delete(i);return;}
+  if(head){const o=head.parentElement.classList.toggle('open');head.setAttribute('aria-expanded',o);return;}
   const m=e.target.closest('[data-mark]');
-  if(m){const i=+m.dataset.mark;found[i]=true;openSet.add(i);save();render();return;}
+  if(m){const i=+m.dataset.mark,o=openDays();found[i]=true;o.add(i);save();render(o,i);return;}
   const u=e.target.closest('[data-undo]');
-  if(u){const i=+u.dataset.undo;found[i]=false;openSet.add(i);save();render();return;}
+  if(u){const i=+u.dataset.undo,o=openDays();found[i]=false;o.add(i);save();render(o,i);return;}
   const gbtn=e.target.closest('[data-go]');
-  if(gbtn){const i=+gbtn.dataset.go;openSet.delete(i-1);openSet.add(i);drawList();scrollTo(i);}
+  if(gbtn){const i=+gbtn.dataset.go,o=openDays();o.delete(i-1);o.add(i);drawList(o,i);scrollTo(i);}
 });
 document.getElementById('k6-reset').addEventListener('click',()=>{
-  if(confirm('Да изчистим ли всички намерени съкровища?')){found=Array(30).fill(false);openSet=new Set();save();render();}
+  if(confirm('Да изчистим ли всички намерени съкровища?')){found=Array(30).fill(false);save();render();}
 });
 
-// Облачно запазване, когато страницата е публикувана в claude.ai
+// Saves progress through window.claude, which exists only when the page is
+// published as a claude.ai artifact.
 async function connectCloud(){
   try{
     if(!window.claude||typeof window.claude.use!=='function')return;
@@ -185,7 +200,7 @@ async function connectCloud(){
     cloud=ref;
     if(remote&&remote.length===30&&count(remote)>count(found)){
       found=remote;try{localStorage.setItem(KEY,JSON.stringify(found));}catch(e){}
-      render();
+      render(openDays());
     }else if(count(found)>0){save();}
   }catch(e){cloud=null;}
 }

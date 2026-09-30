@@ -268,9 +268,9 @@ function render(push = true) {
     rh.querySelector(".r").textContent = head[1];
   }
   scroller().scrollTop = 0;
-  const ribbon = document.getElementById("ribbon");
-  if (PAGES[cur].file === "help") ribbon.setAttribute("aria-current", "page");
-  else ribbon.removeAttribute("aria-current");
+  const help = document.getElementById("help-btn");
+  if (PAGES[cur].file === "help") help.setAttribute("aria-current", "page");
+  else help.removeAttribute("aria-current");
   document.getElementById("stage").scrollIntoView({ block: "nearest" });
   updateProgress();
   // no scroll event when the new page is already at the top
@@ -308,7 +308,7 @@ function showBack() {
     pn = document.getElementById("pageno"),
     pos = document.getElementById("pagepos");
   if (backStack) {
-    b.textContent = "Обратно към " + backStack.who;
+    b.replaceChildren(el("span", "back-to", "Обратно към "), backStack.who);
     b.hidden = false;
     pn.hidden = pos.hidden = true;
   } else {
@@ -371,13 +371,17 @@ document.addEventListener("click", (e) => {
   else if (a.classList.contains("xref")) jump(id, a.dataset.back, a);
   else toBottom(id);
 });
-// Notes and footnote definitions open in place. The button that toggles one
-// says whether it's open: the note's own head, or the footnote mark that
-// names the definition in aria-controls.
+// Notes, footnote definitions, the map's days and the help page's checklist
+// items open in place. The button that toggles one says whether it's open:
+// the box's own head, or the footnote mark that names the definition in
+// aria-controls.
+const OPENABLE = ".note, .deepen, .def, .k6-dd, .ck";
 function setOpen(box, open) {
   box.classList.toggle("open", open);
   const b =
-    box.querySelector(":scope > .note-head, :scope > .deepen-head") ||
+    box.querySelector(
+      ":scope > .note-head, :scope > .deepen-head, :scope > .k6-head, :scope > .ck-more",
+    ) ||
     document.querySelector('[aria-controls="' + box.id + '"]');
   if (b) b.setAttribute("aria-expanded", open);
 }
@@ -491,7 +495,16 @@ toc.addEventListener("click", (e) => {
 
 // Search. Pages are already in the DOM, so each one's text is indexed on first
 // search: its text nodes joined into one string, remembering where each starts.
+// Pages with interactive parts (the map, the help-page summary) rebuild their
+// content, so a change inside a page drops its index.
 const textIndex = new WeakMap();
+new MutationObserver((records) => {
+  records.forEach((r) => {
+    const node = r.target.nodeType === Node.TEXT_NODE ? r.target.parentElement : r.target,
+      page = node && node.closest(".page");
+    if (page) textIndex.delete(page);
+  });
+}).observe(stage, { childList: true, characterData: true, subtree: true });
 function indexOf(page) {
   let ix = textIndex.get(page);
   if (ix) return ix;
@@ -585,7 +598,8 @@ tocQuery.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && first && !tocResults.hidden) first.click();
 });
 // Scroll to a match on the current page and highlight it. A match inside a
-// closed note, deep-dive or definition opens it first, and the scroll waits
+// closed note, deep-dive, definition, map day or checklist item opens it
+// first, and the scroll waits
 // for its expand animation.
 function showHit(i, at, len) {
   const ix = indexOf(pages[i]),
@@ -594,9 +608,9 @@ function showHit(i, at, len) {
   range.setEnd(...locate(ix, at + len));
   let opened = false;
   for (
-    let box = range.startContainer.parentElement.closest(".note, .deepen, .def");
+    let box = range.startContainer.parentElement.closest(OPENABLE);
     box;
-    box = box.parentElement.closest(".note, .deepen, .def")
+    box = box.parentElement.closest(OPENABLE)
   ) {
     if (!box.classList.contains("open")) opened = true;
     setOpen(box, true);
@@ -671,15 +685,14 @@ SYSTEM_DARK.addEventListener("change", (e) => {
   } catch (err) {}
   if (!saved) setTheme(e.matches ? "dark" : "light");
 });
-// ═══ Страницата „Кога да потърсим специалист“ (винаги под ръка) ═══
-// Отваря се от зелената лентичка горе вдясно; бутонът долу връща читателя обратно.
+// The help page, opened from the nav with a way back to the page being read.
 function openHelp() {
   const i = pageIndex("help");
   if (i < 0 || cur === i) return;
   const who = cur === 0 ? "корицата" : cur === 1 ? "съдържанието" : PAGES[cur].nav;
   jump(i, who);
 }
-// Превърта до раздел на страницата за помощ и отваря затворено падащо блокче.
+// Scroll to a section of the help page, opening it if it's a closed deep-dive.
 function helpTo(id) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -693,7 +706,8 @@ function ckToggle(id) {
   const b = el.querySelector(".ck-more");
   if (b) b.setAttribute("aria-expanded", o ? "true" : "false");
 }
-// Резюме в блокчето под списъка, според отметнатите сигнали.
+// The summary under the help page's checklist (#verdict), rebuilt from the
+// ticked signs. The copy button copies it as plain text.
   (function(){
   const THEMES=['тялото','поведението','чувствата и мислите','ежедневието'];
   const REC_Y={
@@ -714,6 +728,7 @@ function ckToggle(id) {
     abuse:'При непосредствена опасност звъннете на 112. Сигнал можете да подадете и на 116 111 или на 0800 1 86 76.'
   };
   const ORDER_R=['death','body','abuse','food','change'];
+  function tel(t){return t.replace(/(112|116 111|0800 1 86 76)(?![\d])/g,function(n){return '<a class="tel" href="tel:'+n.replace(/ /g,'')+'">'+n+'</a>';});}
   function esc(t){return t.replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function link(inp){
     const g=inp.dataset.go, t=esc(inp.dataset.sum);
@@ -739,13 +754,13 @@ function ckToggle(id) {
     if(R.length){
       out.classList.add('r');
       h+='<div class="v-lab">Не чакайте планов час</div>';
-      h+='<p>Отбелязали сте '+(R.length===1?'един спешен сигнал':({2:'два',3:'три',4:'четири',5:'пет'}[R.length]||R.length)+' спешни сигнала')+(Y.length?' и още '+plural(Y.length):'')+'. Потърсете помощ още днес. Ако имате нужда да поговорите с някого веднага, 116 111 отговаря денонощно, и на родители.</p>';
+      h+='<p>Отбелязали сте '+(R.length===1?'един спешен сигнал':({2:'два',3:'три',4:'четири',5:'пет'}[R.length]||R.length)+' спешни сигнала')+(Y.length?' и още '+plural(Y.length):'')+'. Потърсете помощ още днес. Ако имате нужда да поговорите с някого веднага, <a class="tel" href="tel:116111">116 111</a> отговаря денонощно, и на родители.</p>';
       h+='<div class="v-sec">Спешно</div><ul class="v-list">';
       txt.push('СПЕШНО');
       const keys=new Set(R.map(function(i){return i.dataset.rec;}));
       R.forEach(function(i){h+='<li><strong>'+link(i)+'</strong></li>';txt.push('- '+i.dataset.sum);});
       h+='</ul><div class="v-sec">Какво да направите сега</div><ul class="v-list">';
-      ORDER_R.forEach(function(k){if(keys.has(k)){h+='<li>'+REC_R[k]+'</li>';txt.push('> '+REC_R[k]);}});
+      ORDER_R.forEach(function(k){if(keys.has(k)){h+='<li>'+tel(REC_R[k])+'</li>';txt.push('> '+REC_R[k]);}});
       h+='</ul><div class="v-calls"><a href="tel:112">112</a><a href="tel:116111">116 111</a>'+(keys.has('death')?'<a href="#h-death" onclick="helpTo(\'h-death\');return false;">Ако детето говори за смърт</a>':'')+'</div>';
     }else{
       out.classList.add('y');

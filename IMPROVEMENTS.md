@@ -30,8 +30,8 @@ UI and feature backlog for the book preview. Tick items off as they land.
 
 - [x] **Reading settings.** Font size (A− / A+), maybe line spacing, stored in localStorage.
 - [x] **Remember scroll position within a page**, not just which page is open.
-- [ ] (ignore for now) **"Кога да потърсим специалист" page.** An always-reachable page on when to see a specialist, with Bulgarian helplines.
-- [ ] (ignore for now) **Call to action at the end of the preview.** Say that chapters V–VI are coming, with email sign-up or follow links, instead of ending on "Авторите".
+- [x] **"Кога да потърсим специалист" page.** An always-reachable page on when to see a specialist, with Bulgarian helplines. Added as `pages/help.html` with the green ribbon; follow-ups are under "Chapters V–VI and the help page" below.
+- [ ] (ignore for now) **Call to action at the end of the preview.** Chapters V–VI are in now, but the introduction ("Увод") is still coming. Say so, with email sign-up or follow links, instead of ending on "Авторите".
 
 ### Nice to have
 
@@ -76,3 +76,45 @@ Already in place: `lang="bg"`, `:focus-visible` rings, a `prefers-reduced-motion
 ## Content
 
 - [x] **Update the intro in `pages/contents.html`.** It says "Първите две глави са готови", but four chapters are ready now.
+
+## Chapters V–VI and the help page
+
+Found while merging the sister's copy: the chapter I rework, chapters V (`ch5-*`) and VI (`ch6-map`, `js/ch6-map.js`, `css/ch6-map.css`) and the help page (`pages/help.html`, the ribbon in `index.html`, the help code in `js/book.js`).
+
+### Help CTA
+
+- [x] **Move the help entry point into the bottom nav.** The ribbon (`.ribbon`) has three problems:
+  - It crowds the running head: 3.6px from the header text on desktop, and it covers the right side of the header on phones.
+  - Its label is unreadable: "помощ" in 12px sideways small caps (11px on phones).
+  - On phones it scrolls away with the page, so the help page isn't "always at hand" as it promises.
+
+  The nav is sticky on every device and holds the other controls. Add a lifebuoy or phone icon with "Помощ" there (icon only on phones, like the other nav buttons). Optionally keep a quieter bookmark on desktop as decoration. This also gives more help CTAs a consistent home.
+
+### Bugs
+
+- [x] **Invisible link in the dark `.practice` box.** On `ch5-shelf`, "шеста глава" in "Накъде оттук" is the same colour as the box (both #4c4d64). `ch5-help` works around the same problem with an inline `style` on its source link. Add a `.practice a` rule for light link colours and drop the inline style.
+- [x] **Duplicate ID `k6-src1`.** It's on both `ch4-evidence` and `ch6-map`, and all pages share one DOM. "(виж Източник 1)" on the map finds chapter IV's card first and scrolls to a hidden page. Rename the chapter VI one (in the page and in `js/ch6-map.js`). Consider a check for duplicate IDs across `pages/`.
+- [x] **The map loses keyboard focus.** "Намерихме го", "Отмени" and "Към ден N" rebuild the whole list with `innerHTML` (`drawList()` in `js/ch6-map.js`), so focus drops to `<body>`. Move focus back to the day's button after the re-render, or update just that row.
+- [x] **Book search goes stale on dynamic pages.** `textIndex` in `js/book.js` caches each page's text nodes on the first search. Once the map list or the help-page summary (`#verdict`) re-renders, results point at detached nodes, so clicking one neither scrolls nor highlights. Clear the page's cache on re-render (e.g. from the `book:pageload` event or a new "book:pagechange" event), or index lazily per search.
+- [x] **Search doesn't open collapsed map days or checklist items.** `showHit()` only opens `.note, .deepen, .def`, so a match inside a closed `.k6-dd` day or a `.ck` checklist item stays hidden. Give them a shared way to open, or add them to the list.
+
+### UI
+
+- [ ] **One-off accent colour.** Chapter VI adds a chartreuse (#D1E231) for the "next step" marker that isn't in the palette, and it's the one SVG colour without a dark-mode mapping. Make it a token with a dark value, or use moss.
+- [ ] **Wide gap after "Ден 1" on phones.** `.k6-head .dn` is a fixed `3.6em`, which leaves a big gap before the day title at 390px.
+- [ ] **Native confirm dialog.** "Започни картата отначало" uses `confirm()`, which clashes with the book's look. Use an inline confirm step instead ("Сигурни ли сте? Да / Не").
+
+### Technical
+
+- [ ] **Move the help-page code out of `book.js`.** About 120 lines (`openHelp`, `helpTo`, `ckToggle`, the summary builder) are written in a compressed one-line style with Bulgarian comments, unlike the rest of the file. Move them to `js/help.js` next to `js/ch6-map.js` and format them like the rest.
+- [ ] **Tidy the new CSS.** The chapter V/help rules at the end of `css/styles.css` and `css/ch6-map.css` are one-line rules with Bulgarian comments, unlike the rest of the stylesheet. Some are unused, e.g. `.k6-dd.locked` (the map has no locked state). Reformat and remove dead rules.
+- [ ] **Storage key naming.** The map saves progress under `smelost-karta-v1`; other keys use `book:…` (`book:page`, `book:theme`). Rename, migrating the old key so progress isn't lost.
+- [ ] **Unused claude.ai sync.** `connectCloud()` in `js/ch6-map.js` saves progress through `window.claude`, which only exists when the page is published as a Claude artifact. It does nothing on our hosting. Remove it, or keep it deliberately.
+
+### For the author to check
+
+- [ ] **Two overlapping "when to see a specialist" lists.** `ch5-help` has 6 points and the help page's checklist has 26, and they'll drift apart. Consider keeping the narrative in `ch5-help` and linking to the help page for the list.
+- [ ] **Citations to double-check.**
+  - `ch5-help`: "when fear becomes a problem" cites the parent-modelling meta-analysis (Nimphy 2023), which doesn't seem to cover that.
+  - `ch5-shelf`: the claim about parents working from written materials cites the children's-books review (Crane 2025).
+- [ ] **Sources for the map days.** 27 of the 30 days show "Източник за този ден предстои да бъде добавен." Only days 6, 13 and 22 have one (all SPACE). Adding more needs more source cards on `ch6-map` and a per-day source field in `js/ch6-map.js`, since every day now links to Източник 1. Or drop the placeholder line.
