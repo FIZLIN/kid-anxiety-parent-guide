@@ -32,12 +32,12 @@ Guidelines, following common practice (Material Design, Apple's HIG), and calm a
 
 ### Suggestions
 
-- [ ] **Directional page turns.** Going forward, the old page drifts about 12px left and fades while the new one comes in from the right; Назад does the reverse. About 220ms. Use the View Transitions API (`document.startViewTransition()` around the switch in `render()`); browsers without it keep the current behaviour. This replaces the 0.5s fade-in.
-- [ ] **Help opens as a layer.** The help page rises from the bottom and sinks back when you leave it, instead of turning sideways like a page. This shows it's separate from the page order (it's `standalone` in `PAGES`).
-- [ ] **Smooth drawer close.** Slide the contents drawer out and fade its backdrop, instead of snapping shut. Plain CSS can do it now: `@starting-style` plus `transition-behavior: allow-discrete` on the `<dialog>`.
-- [ ] **A small reward on the map.** On "Намерихме го", the X draws itself in (`stroke-dashoffset`), a ring appears around it, and the dotted path to the next day fills in, about 600ms in all. It's the one place where a small celebration fits the content. Needs its own design pass.
-- [ ] **Gentle footer changes.** Cross-fade the middle of the footer between the page title and "Обратно към …", and fade the Помощ button between its green and pale states, instead of snapping.
-- [ ] **Expand map days and checklist items without clipping.** `.k6-body` and `.ck-body` still open with fixed `max-height` limits (1200px and 520px), so the end of the text can get cut off at the 135% text setting, the problem already fixed for notes. Switch them to the same `grid-template-rows: 0fr → 1fr` animation. See also "Extend reduced motion" under Accessibility.
+- [x] **Directional page turns.** Going forward, the old page drifts about 12px left and fades while the new one comes in from the right; Назад does the reverse. About 220ms. Use the View Transitions API (`document.startViewTransition()` around the switch in `render()`); browsers without it keep the current behaviour. This replaces the 0.5s fade-in.
+- [x] **Help opens as a layer.** The help page rises from the bottom and sinks back when you leave it, instead of turning sideways like a page. This shows it's separate from the page order (it's `standalone` in `PAGES`).
+- [x] **Smooth drawer close.** Slide the contents drawer out and fade its backdrop, instead of snapping shut. Plain CSS can do it now: `@starting-style` plus `transition-behavior: allow-discrete` on the `<dialog>`.
+- [x] **A small reward on the map.** On "Намерихме го", the X draws itself in (`stroke-dashoffset`), a ring appears around it, and the dotted path to the next day fills in, about 600ms in all. It's the one place where a small celebration fits the content. Done with one change: the path only counts as walked between two found days, so the one that fills in is the path *to* the day just found (from the previous day), not on to the next one. The day's icon in the list plays the same draw-in, since the map is usually scrolled out of view when you press the button.
+- [x] **Gentle footer changes.** Cross-fade the middle of the footer between the page title and "Обратно към …", and fade the Помощ button between its green and pale states, instead of snapping.
+- [x] **Expand map days and checklist items without clipping.** `.k6-body` and `.ck-body` still open with fixed `max-height` limits (1200px and 520px), so the end of the text can get cut off at the 135% text setting, the problem already fixed for notes. Switch them to the same `grid-template-rows: 0fr → 1fr` animation. See also "Extend reduced motion" under Accessibility.
 
 ### Avoid
 

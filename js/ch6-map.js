@@ -104,18 +104,30 @@ function numAt(i){
   if((cx-x)*nx+(cy-y)*ny<0){nx=-nx;ny=-ny;}
   return [x+nx*NUM_GAP,y+ny*NUM_GAP];
 }
-function drawMap(){
+// Day fresh, just found, is drawn in (ch6-map.css): the path that joins it to
+// a found neighbour fills in, masked by a stroke that draws along it, then
+// the X draws itself and the ring closes around it.
+function drawMap(fresh){
   const cur=current(),sg=document.getElementById('k6-segs'),xg=document.getElementById('k6-xs');
   sg.innerHTML='';xg.innerHTML='';
-  for(let i=0;i<29;i++)el('path',{class:'seg '+(found[i]&&found[i+1]?'walked':'ahead')+(i%6===5?' sea':''),d:seg(i)},sg);
+  for(let i=0;i<29;i++){
+    const walked=found[i]&&found[i+1],sea=i%6===5?' sea':'';
+    if(walked&&(i===fresh-1||i===fresh)){
+      el('path',{class:'seg ahead'+sea,d:seg(i)},sg);
+      const m=el('mask',{id:'k6-reveal'+i,maskUnits:'userSpaceOnUse',x:0,y:0,width:'100%',height:'100%'},sg);
+      el('path',{class:'reveal',d:seg(i),pathLength:1},m);
+      el('path',{class:'seg walked'+sea,d:seg(i),mask:`url(#k6-reveal${i})`},sg);
+    }else el('path',{class:'seg '+(walked?'walked':'ahead')+sea,d:seg(i)},sg);
+  }
   P.forEach(([x,y],i)=>{
     const st=state(i),last=i===29;
-    const g=el('g',{class:'k6-x '+st,tabindex:0,role:'button','aria-label':`Ден ${i+1}, ${st==='found'?'намерено':st==='now'?'следващото съкровище':'още не е намерено'}`},xg);
+    const g=el('g',{class:'k6-x '+st+(i===fresh?' fresh':''),tabindex:0,role:'button','aria-label':`Ден ${i+1}, ${st==='found'?'намерено':st==='now'?'следващото съкровище':'още не е намерено'}`},xg);
     el('circle',{class:'hit',cx:x,cy:y,r:22},g);
     if(st==='now'){el('circle',{class:'pulse',cx:x,cy:y,r:15},g);el('circle',{class:'halo',cx:x,cy:y,r:15},g);}
     if(st==='found')el('circle',{class:'ring',cx:x,cy:y,r:last?16:13},g);
     const s=last?10:(st==='todo'?6:7);
-    el('path',{class:'x',d:`M${x-s},${y-s}L${x+s},${y+s}M${x+s},${y-s}L${x-s},${y+s}`},g);
+    el('path',{class:'x',d:`M${x-s},${y-s}L${x+s},${y+s}`,pathLength:1},g);
+    el('path',{class:'x',d:`M${x+s},${y-s}L${x-s},${y+s}`,pathLength:1},g);
     const [nx,ny]=numAt(i);el('text',{class:'num',x:nx,y:ny,'text-anchor':'middle','dominant-baseline':'central'},g).textContent=i+1;
     g.addEventListener('click',()=>goDay(i));
     g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goDay(i);}});
@@ -125,7 +137,7 @@ function drawMap(){
 
 function icon(st){
   if(st==='now')return '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#D1E231"/><path d="M6 6l8 8M14 6l-8 8" stroke="#262530" stroke-width="2.4" stroke-linecap="round"/></svg>';
-  if(st==='found')return '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="#5A6529" stroke-width="1.3"/><path d="M7 7l6 6M13 7l-6 6" stroke="#5A6529" stroke-width="2" stroke-linecap="round"/></svg>';
+  if(st==='found')return '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="#5A6529" stroke-width="1.3"/><path d="M7 7l6 6" pathLength="1" stroke="#5A6529" stroke-width="2" stroke-linecap="round"/><path d="M13 7l-6 6" pathLength="1" stroke="#5A6529" stroke-width="2" stroke-linecap="round"/></svg>';
   return '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 7l6 6M13 7l-6 6" stroke="#7E7F9A" stroke-width="2" stroke-linecap="round"/></svg>';
 }
 
@@ -133,15 +145,15 @@ function icon(st){
 // (setOpen in book.js) stays open.
 function openDays(){return new Set([...list.querySelectorAll('.k6-dd.open')].map(d=>+d.id.slice(4)));}
 // Rebuilding the list removes the button that was pressed, so focus goes
-// to the head of day focusDay.
-function drawList(openSet,focusDay){
+// to the head of day focusDay. Day fresh, just found, draws its icon in.
+function drawList(openSet,focusDay,fresh){
   let h='';
   for(let g=0;g<5;g++){
     const n=count(found.slice(g*6,g*6+6));
     h+=`<h3 class="k6-isle">${ISLANDS[g].name}<span>${n} от 6 намерени</span></h3>`;
     for(let i=g*6;i<g*6+6;i++){
       const st=state(i),[title,task,why,link,src]=D[i],isOpen=openSet.has(i);
-      h+=`<div class="k6-dd ${st}${isOpen?' open':''}" id="k6-d${i}">
+      h+=`<div class="k6-dd ${st}${isOpen?' open':''}${i===fresh?' fresh':''}" id="k6-d${i}">
         <button class="k6-head" type="button" aria-expanded="${isOpen}" aria-controls="k6-b${i}" data-i="${i}">${icon(st)}<span class="dn">Ден ${i+1}</span><span class="dt">${title}</span><span class="tog" aria-hidden="true">+</span></button>
         <div class="k6-body" id="k6-b${i}"><div class="inner">
           <div class="k6-task"><p class="lab">Днешното съкровище</p><p>${task}</p></div>
@@ -159,7 +171,7 @@ function drawList(openSet,focusDay){
 }
 
 function pageName(f){try{const p=PAGES.find(x=>x.file===f);if(p)return p.runhead?p.runhead[1]:p.nav;}catch(e){}return f;}
-function render(openSet,focusDay){drawMap();drawList(openSet||new Set(),focusDay);}
+function render(openSet,focusDay,fresh){drawMap(fresh);drawList(openSet||new Set(),focusDay,fresh);}
 
 function scrollTo(i){
   const row=document.getElementById('k6-d'+i);if(!row)return;
@@ -176,7 +188,7 @@ list.addEventListener('click',e=>{
   const head=e.target.closest('.k6-head[data-i]');
   if(head){const o=head.parentElement.classList.toggle('open');head.setAttribute('aria-expanded',o);return;}
   const m=e.target.closest('[data-mark]');
-  if(m){const i=+m.dataset.mark,o=openDays();found[i]=true;o.add(i);save();render(o,i);return;}
+  if(m){const i=+m.dataset.mark,o=openDays();found[i]=true;o.add(i);save();render(o,i,i);return;}
   const u=e.target.closest('[data-undo]');
   if(u){const i=+u.dataset.undo,o=openDays();found[i]=false;o.add(i);save();render(o,i);return;}
   const gbtn=e.target.closest('[data-go]');

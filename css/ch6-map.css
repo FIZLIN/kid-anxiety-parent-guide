@@ -27,6 +27,21 @@
 .k6-x.now .pulse{fill:none;stroke:#D1E231;stroke-width:2.5;transform-box:fill-box;transform-origin:center;animation:k6pulse 2.2s ease-out infinite;}
 @keyframes k6pulse{0%{transform:scale(.7);opacity:1}100%{transform:scale(1.9);opacity:0}}
 @media (prefers-reduced-motion:reduce){.k6-x.now .pulse{animation:none;opacity:0;}}
+/* a day just found (drawMap in ch6-map.js): the path to it fills in, the X draws
+   itself stroke by stroke and the ring closes around it, about 600ms in all; the
+   day's icon in the list does the same. With reduced motion they only fade in. */
+.k6-map .reveal{fill:none;stroke:#fff;stroke-width:8;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:k6draw .25s ease-out forwards;}
+.k6-x.fresh .x,.k6-dd.fresh .k6-head svg path{stroke-dasharray:1;animation:k6draw .18s ease-out .2s both;}
+.k6-x.fresh .x + .x,.k6-dd.fresh .k6-head svg path + path{animation-delay:.3s;}
+.k6-x.fresh .ring,.k6-dd.fresh .k6-head svg circle{transform-box:fill-box;transform-origin:center;animation:k6ring .22s ease-out .4s both;}
+.k6-dd.fresh .k6-stamp{animation:k6fade .2s ease-out .4s both;}
+@keyframes k6draw{from{stroke-dashoffset:1;opacity:0}10%{opacity:1}to{stroke-dashoffset:0;opacity:1}}
+@keyframes k6ring{from{transform:scale(.6);opacity:0}}
+@keyframes k6fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){
+  .k6-map .reveal,.k6-x.fresh .x,.k6-dd.fresh .k6-head svg path{stroke-dashoffset:0;animation-name:k6fade;}
+  .k6-x.fresh .ring,.k6-dd.fresh .k6-head svg circle{animation-name:k6fade;}
+}
 .k6-x:focus-visible .hit{stroke:var(--lilac-deep);stroke-width:2;}
 .k6-x:hover .x{stroke-width:3.4;}
 
@@ -60,9 +75,8 @@
 .k6-dd.locked .k6-head .dt{color:var(--lilac);font-style:italic;font-size:14.5px;}
 .k6-dd.flash{animation:k6flash 1.4s ease;}
 @keyframes k6flash{0%,60%{background:var(--lilac-soft);}100%{background:transparent;}}
-.k6-body{max-height:0;overflow:hidden;transition:max-height .4s ease;}
-.k6-dd.open .k6-body{max-height:1200px;}
-@media (prefers-reduced-motion:reduce){.k6-body,.k6-head .tog{transition:none;}}
+/* .k6-body opens like a note (styles.css) */
+@media (prefers-reduced-motion:reduce){.k6-body,.k6-body>.inner,.k6-head .tog{transition:none;}}
 .k6-body .inner{padding:.3rem 2px 1.4rem;}
 .k6-task{background:var(--moss-soft);border-left:3px solid #D1E231;padding:1rem 1.15rem;margin-bottom:1rem;}
 .k6-task .lab,.k6-why .lab{font-family:var(--display);font-style:italic;font-size:15px;margin-bottom:.3rem;}

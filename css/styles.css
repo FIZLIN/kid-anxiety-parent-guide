@@ -108,7 +108,12 @@ body {
 }
 .page.active {
   display: block;
-  animation: turn 0.5s ease;
+}
+/* Browsers without view transitions: the new page fades in. */
+@supports not (view-transition-name: none) {
+  .page.active {
+    animation: turn 0.5s ease;
+  }
 }
 @keyframes turn {
   from {
@@ -121,6 +126,129 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .page.active {
     animation: none;
+  }
+}
+
+/* Page turns (turn() in book.js sets data-turn for the transition). Forward,
+   the old page drifts left and fades while the new one comes in from the
+   right; back is the reverse. The help page, outside the reading order, rises
+   over the book and sinks back. The old page fades out before the new one
+   fades in, so the two texts never overlap; the page title in the running
+   head and in the nav does the same. The rest of the running head and nav
+   cross-fade in place, so what doesn't change stays still. On desktop the
+   page box moves; on phones, where the window scrolls, the whole view moves
+   (see below). */
+.page.active {
+  view-transition-name: page;
+}
+.runhead {
+  view-transition-name: runhead;
+}
+.runhead .r {
+  view-transition-name: runhead-title;
+}
+.nav {
+  view-transition-name: nav;
+}
+.nav-slot {
+  view-transition-name: nav-slot;
+}
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 0.2s;
+}
+:root[data-turn="next"] {
+  --turn-out: turn-out-left;
+  --turn-in: turn-in-right;
+}
+:root[data-turn="prev"] {
+  --turn-out: turn-out-right;
+  --turn-in: turn-in-left;
+}
+:root[data-turn="up"] {
+  --turn-out: turn-fade-out;
+  --turn-in: turn-in-up;
+}
+:root[data-turn="down"] {
+  --turn-out: turn-out-down;
+  --turn-in: turn-fade-in;
+}
+:root[data-turn] {
+  --turn-out-time: 0.1s;
+  --turn-in-time: 0.15s;
+}
+:root[data-turn="up"],
+:root[data-turn="down"] {
+  --turn-out-time: 0.12s;
+  --turn-in-time: 0.2s;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-turn] {
+    --turn-out: turn-fade-out;
+    --turn-in: turn-fade-in;
+  }
+}
+:root[data-turn]::view-transition-old(page) {
+  animation: var(--turn-out) var(--turn-out-time) ease-in both;
+}
+:root[data-turn]::view-transition-new(page) {
+  animation: var(--turn-in) var(--turn-in-time) ease-out var(--turn-out-time)
+    both;
+}
+:root[data-turn]::view-transition-old(runhead-title),
+:root[data-turn]::view-transition-old(nav-slot) {
+  animation: turn-fade-out var(--turn-out-time) ease-in both;
+}
+:root[data-turn]::view-transition-new(runhead-title),
+:root[data-turn]::view-transition-new(nav-slot) {
+  animation: turn-fade-in var(--turn-in-time) ease-out var(--turn-out-time)
+    both;
+}
+@keyframes turn-out-left {
+  to {
+    transform: translateX(-12px);
+    opacity: 0;
+  }
+}
+@keyframes turn-in-right {
+  from {
+    transform: translateX(12px);
+    opacity: 0;
+  }
+}
+@keyframes turn-out-right {
+  to {
+    transform: translateX(12px);
+    opacity: 0;
+  }
+}
+@keyframes turn-in-left {
+  from {
+    transform: translateX(-12px);
+    opacity: 0;
+  }
+}
+@keyframes turn-in-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@keyframes turn-out-down {
+  to {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@keyframes turn-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes turn-fade-in {
+  from {
+    opacity: 0;
   }
 }
 
@@ -649,7 +777,9 @@ h3.sub {
    can't shrink below the inner block's padding, so that animates as well. */
 .note-body,
 .deepen-body,
-.def {
+.def,
+.k6-body,
+.check .ck-body {
   display: grid;
   grid-template-rows: 0fr;
   visibility: hidden;
@@ -659,22 +789,31 @@ h3.sub {
 }
 .note.open .note-body,
 .deepen.open .deepen-body,
-.def.open {
+.def.open,
+.k6-dd.open .k6-body,
+.check .ck.open .ck-body {
   grid-template-rows: 1fr;
   visibility: visible;
 }
 .note-body > .inner,
 .deepen-body > .inner,
-.def > .inner {
+.def > .inner,
+.k6-body > .inner,
+.check .ck-body > .inner {
   min-height: 0;
   overflow: hidden;
-  transition: padding 0.35s ease;
+  transition:
+    padding 0.35s ease,
+    margin 0.35s ease;
 }
 .note:not(.open) .note-body > .inner,
 .deepen:not(.open) .deepen-body > .inner,
-.def:not(.open) > .inner {
+.def:not(.open) > .inner,
+.k6-dd:not(.open) .k6-body > .inner,
+.check .ck:not(.open) .ck-body > .inner {
   padding-top: 0;
   padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 /* deep-dive */
@@ -1051,6 +1190,9 @@ h3.sub {
   background: var(--moss-deep);
   border-radius: 2px;
   padding: 6px 12px 6px 10px;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
 }
 .nav .help:hover:not([aria-current]) {
   color: var(--page);
@@ -1138,21 +1280,59 @@ h3.sub {
   color: var(--ink);
   box-shadow: 0 0 44px var(--shadow);
 }
+/* The drawer slides in from the left (easing out) and back out (easing in)
+   while its backdrop fades. Closing, `overlay` and `display` switch only at
+   the end, so it stays on screen until it's out. With reduced motion it only
+   fades. */
+.toc,
+.toc::backdrop {
+  transition:
+    transform 0.2s ease-in,
+    opacity 0.2s ease-in,
+    overlay 0.2s allow-discrete,
+    display 0.2s allow-discrete;
+}
+.toc {
+  transform: translateX(-100%);
+}
 .toc[open] {
-  animation: slide-in 0.25s ease;
-}
-@keyframes slide-in {
-  from {
-    transform: translateX(-100%);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .toc[open] {
-    animation: none;
-  }
+  transform: none;
 }
 .toc::backdrop {
   background: rgba(20, 20, 28, 0.4);
+  opacity: 0;
+}
+.toc[open]::backdrop {
+  opacity: 1;
+}
+.toc[open],
+.toc[open]::backdrop {
+  transition-duration: 0.25s;
+  transition-timing-function: ease-out;
+}
+@starting-style {
+  .toc[open] {
+    transform: translateX(-100%);
+  }
+  .toc[open]::backdrop {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toc,
+  .toc[open] {
+    transform: none;
+    opacity: 0;
+  }
+  .toc[open] {
+    opacity: 1;
+  }
+  @starting-style {
+    .toc[open] {
+      transform: none;
+      opacity: 0;
+    }
+  }
 }
 /* the page behind doesn't scroll while the drawer is open */
 html:has(.toc[open]) {
@@ -1581,6 +1761,22 @@ html:has(.toc[open]) {
     overflow-x: clip;
     padding-bottom: 2.5rem;
   }
+  /* The page runs far past the screen here, so a page turn moves the view
+     (the root snapshot) instead; the running head and nav stay put. */
+  .page.active {
+    view-transition-name: none;
+  }
+  :root[data-turn]::view-transition-old(root) {
+    animation: var(--turn-out) var(--turn-out-time) ease-in both;
+  }
+  :root[data-turn]::view-transition-new(root) {
+    animation: var(--turn-in) var(--turn-in-time) ease-out
+      var(--turn-out-time) both;
+  }
+  /* between the two, a blank sheet rather than the canvas behind */
+  :root[data-turn]::view-transition {
+    background: var(--page);
+  }
   .runhead {
     position: sticky;
     top: 0;
@@ -1917,15 +2113,14 @@ html:has(.toc[open]) {
   .check .ck-more span{display:inline-block;transition:transform .25s;}
   .check .ck-more:hover,.check .ck-more:focus-visible{color:var(--moss-deep);background:var(--moss-soft);outline:none;}
   .check .ck.open .ck-more span{transform:rotate(45deg);}
-  .check .ck-body{grid-column:1 / -1;max-height:0;overflow:hidden;transition:max-height .35s ease;}
-  .check .ck.open .ck-body{max-height:520px;}
+  .check .ck-body{grid-column:1 / -1;}
   .check .ck-body .inner{margin:0 2px 12px 33px;padding:.75rem 1rem;border-left:3px solid var(--moss);background:var(--moss-soft);}
   .check .urgent-set .ck-body .inner{border-left-color:var(--lilac-deep);background:var(--lilac-soft);}
   .check .ck-body p{font-size:14px;line-height:1.68;margin:0;max-width:none;}
   .check .ck-body .ck-go{margin-top:.55rem;font-size:13.5px;color:var(--lilac-deep);}
   .check .ck-sub{font-variant:small-caps;letter-spacing:1.2px;font-size:12.5px;color:var(--lilac);margin:1.1rem 0 .1rem;}
   .ck-demo{display:inline-block;font-family:var(--display);color:var(--moss-deep);border:1px solid var(--line);padding:0 7px;line-height:1.3;}
-  @media(prefers-reduced-motion:reduce){.check .ck-body,.check .ck-more span{transition:none;}}
+  @media(prefers-reduced-motion:reduce){.check .ck-body,.check .ck-body>.inner,.check .ck-more span{transition:none;}}
   @media(max-width:480px){.check .ck-body .inner{margin-left:2px;}.check .ck-more{width:38px;margin-right:8px;}}
 
   /* the summary of ticked signs, built by book.js */

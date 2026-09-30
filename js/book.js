@@ -293,6 +293,35 @@ function render(push = true) {
   }
   rendered = true;
 }
+// Page turns animate with a view transition (styles.css): forward slides
+// left, back slides right, and the standalone help page rises over the book
+// and sinks back. The browser snapshots the old page before calling update,
+// so each move to another page, with whatever it does after the turn
+// (scrolling, focus), runs inside turn(); a turn started inside another runs
+// straight away as part of it. Without view transitions the page just fades
+// in.
+let turning = false;
+function turnOf(from, to) {
+  if (PAGES[to].standalone && !PAGES[from].standalone) return "up";
+  if (PAGES[from].standalone && !PAGES[to].standalone) return "down";
+  return to > from ? "next" : "prev";
+}
+function turn(update) {
+  if (turning || !rendered || !document.startViewTransition) return update();
+  const from = cur,
+    root = document.documentElement;
+  const t = document.startViewTransition(() => {
+    turning = true;
+    try {
+      update();
+    } finally {
+      turning = false;
+    }
+    if (cur === from) t.skipTransition();
+    else root.dataset.turn = turnOf(from, cur);
+  });
+  t.finished.finally(() => delete root.dataset.turn);
+}
 // The page d pages away in reading order, skipping standalone ones; -1 if
 // there's none, or when on a standalone page, which page turns don't leave.
 function step(d) {
@@ -314,8 +343,10 @@ let backs = [];
 function goTo(p, push = true) {
   const i = pageIndex(p);
   if (i < 0) return;
-  backs = [];
-  show(i, push);
+  turn(() => {
+    backs = [];
+    show(i, push);
+  });
 }
 function show(i, push = true) {
   cur = i;
@@ -348,25 +379,29 @@ function showBack() {
 function jump(i, who, from) {
   const j = pageIndex(i);
   if (j < 0) return;
-  backs.push({ page: cur, scroll: scroller().scrollTop, who: who, from: from });
-  show(j);
-  document.getElementById("stage").scrollIntoView({ block: "start" });
+  turn(() => {
+    backs.push({ page: cur, scroll: scroller().scrollTop, who: who, from: from });
+    show(j);
+    document.getElementById("stage").scrollIntoView({ block: "start" });
+  });
 }
 function goBack(push = true) {
   const t = backTarget();
   if (!t) return;
-  const back = document.getElementById("back"),
-    onBack = document.activeElement === back;
-  backs.pop();
-  if (t.scroll == null) goTo(t.page, push);
-  else show(t.page, push);
-  // once the back button hides, focus returns to the link followed
-  if (onBack && back.hidden)
-    (t.from && pages[cur].contains(t.from) ? t.from : pages[cur]).focus({ preventScroll: true });
-  if (t.scroll == null) return;
-  scroller().scrollTo({ top: t.scroll, behavior: "instant" });
-  updateProgress();
-  saveScroll();
+  turn(() => {
+    const back = document.getElementById("back"),
+      onBack = document.activeElement === back;
+    backs.pop();
+    if (t.scroll == null) goTo(t.page, push);
+    else show(t.page, push);
+    // once the back button hides, focus returns to the link followed
+    if (onBack && back.hidden)
+      (t.from && pages[cur].contains(t.from) ? t.from : pages[cur]).focus({ preventScroll: true });
+    if (t.scroll == null) return;
+    scroller().scrollTo({ top: t.scroll, behavior: "instant" });
+    updateProgress();
+    saveScroll();
+  });
 }
 // Browser Back/Forward, or an edited address. Going back to the page a
 // cross-reference was followed from works like "Обратно към …" and restores
@@ -376,12 +411,15 @@ window.addEventListener("popstate", (e) => {
   // an unknown address shows the cover; don't leave it in the address bar
   if (location.hash !== pageHash(i)) history.replaceState(null, "", pageUrl(i));
   if (backs.length && backs[backs.length - 1].page === i) return goBack(false);
-  goTo(i, false);
-  if (e.state && e.state.page === PAGES[i].file) {
-    scrollToAt(e.state.at);
-    updateProgress();
-    saveScroll();
-  }
+  const state = e.state;
+  turn(() => {
+    goTo(i, false);
+    if (state && state.page === PAGES[i].file) {
+      scrollToAt(state.at);
+      updateProgress();
+      saveScroll();
+    }
+  });
 });
 // Links within the book: a cross-reference (<a class="xref" href="#<page>"
 // data-back="…">) turns to that page with a way back, a source reference
@@ -521,8 +559,10 @@ toc.addEventListener("click", (e) => {
   const b = e.target.closest("[data-i]");
   if (!b) return;
   toc.close();
-  goTo(+b.dataset.i);
-  if (b.dataset.at) showHit(+b.dataset.i, +b.dataset.at, +b.dataset.len);
+  turn(() => {
+    goTo(+b.dataset.i);
+    if (b.dataset.at) showHit(+b.dataset.i, +b.dataset.at, +b.dataset.len);
+  });
 });
 
 // Search. Pages are already in the DOM, so each one's text is indexed on first
