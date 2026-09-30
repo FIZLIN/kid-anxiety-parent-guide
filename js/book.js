@@ -11,6 +11,8 @@ const CH6 = "VI. Трийсет малки глътки смелост";
 //   file:    pages/<file>.html
 //   nav:     label shown in the bottom nav
 //   runhead: [left, right] text of the header above the page, or null for none
+//   standalone: outside the reading order. Page turns skip it; it's reached
+//     from its own buttons and left with the back button.
 const PAGES = [
   { file: "cover", nav: "Корица", runhead: null },
   { file: "contents", nav: "Съдържание", runhead: [BOOK, "Съдържание"] },
@@ -67,7 +69,7 @@ const PAGES = [
   { file: "ch5-help", nav: "Кога да потърсим помощ", runhead: [CH5, "Кога да потърсим помощ"] },
   { file: "ch5-shelf", nav: "Рафтът", runhead: [CH5, "Рафтът"] },
   { file: "ch6-map", nav: "Трийсет малки глътки", runhead: [BOOK, "Глава шеста"] },
-  { file: "help", nav: "Специалист и помощ", runhead: [BOOK, "Помощ и специалисти"] },
+  { file: "help", nav: "Специалист и помощ", runhead: [BOOK, "Помощ и специалисти"], standalone: true },
   { file: "about-project", nav: "За проекта", runhead: [BOOK, "За проекта"] },
   { file: "about-authors", nav: "Авторите", runhead: [BOOK, "Авторите"] },
 ];
@@ -95,7 +97,10 @@ function loadSavedPage() {
     return 0;
   }
 }
+// A standalone page isn't saved, so the next visit opens the book where the
+// reader was, and the help page's back button knows where that was.
 function savePage() {
+  if (PAGES[cur].standalone) return;
   try {
     localStorage.setItem(STORAGE_KEY, PAGES[cur].file);
   } catch (e) {}
@@ -256,8 +261,14 @@ function render(push = true) {
   page.tabIndex = -1;
   page.setAttribute("aria-label", PAGES[cur].nav);
   document.title = cur ? PAGES[cur].nav + " · " + BOOK : BOOK;
-  document.getElementById("prev").disabled = cur === 0;
-  document.getElementById("next").disabled = cur === total - 1;
+  // Every nav control stays in its place on every page: page turns are
+  // disabled where there's nowhere to go (on a standalone page too), and the
+  // help button shows when it's the page open.
+  document.getElementById("prev").disabled = step(-1) < 0;
+  document.getElementById("next").disabled = step(1) < 0;
+  const help = document.getElementById("help-btn");
+  if (PAGES[cur].file === "help") help.setAttribute("aria-current", "page");
+  else help.removeAttribute("aria-current");
   document.getElementById("pageno").textContent = PAGES[cur].nav;
   document.getElementById("pagepos").textContent = POSITION[cur];
   const rh = document.getElementById("runhead"),
@@ -268,11 +279,9 @@ function render(push = true) {
     rh.querySelector(".r").textContent = head[1];
   }
   scroller().scrollTop = 0;
-  const help = document.getElementById("help-btn");
-  if (PAGES[cur].file === "help") help.setAttribute("aria-current", "page");
-  else help.removeAttribute("aria-current");
   document.getElementById("stage").scrollIntoView({ block: "nearest" });
   updateProgress();
+  showBack();
   // no scroll event when the new page is already at the top
   saveScroll();
   const announce = document.getElementById("announce");
@@ -284,59 +293,80 @@ function render(push = true) {
   }
   rendered = true;
 }
+// The page d pages away in reading order, skipping standalone ones; -1 if
+// there's none, or when on a standalone page, which page turns don't leave.
+function step(d) {
+  if (PAGES[cur].standalone) return -1;
+  let i = cur + d;
+  while (PAGES[i] && PAGES[i].standalone) i += d;
+  return PAGES[i] ? i : -1;
+}
 function next() {
-  if (cur < total - 1) {
-    cur++;
-    render();
-  }
+  if (step(1) >= 0) goTo(step(1));
 }
 function prev() {
-  if (cur > 0) {
-    cur--;
-    render();
-  }
+  if (step(-1) >= 0) goTo(step(-1));
 }
+// Ways back from the cross-references followed, the latest last. Only
+// following one (jump) and going back (goBack) keep them; any other move to
+// a page, e.g. a page turn or the contents, starts over.
+let backs = [];
 function goTo(p, push = true) {
   const i = pageIndex(p);
   if (i < 0) return;
+  backs = [];
+  show(i, push);
+}
+function show(i, push = true) {
   cur = i;
   render(push);
 }
-let backStack = null;
+// How the back button names a page.
+function whoOf(i) {
+  return i === 0 ? "корицата" : i === 1 ? "съдържанието" : PAGES[i].nav;
+}
+// A standalone page reached without a way back (from an address or search)
+// leads back to the page last read.
+function backTarget() {
+  if (backs.length) return backs[backs.length - 1];
+  if (PAGES[cur].standalone) {
+    const i = loadSavedPage();
+    return { page: i, scroll: null, who: whoOf(i) };
+  }
+  return null;
+}
 function showBack() {
   const b = document.getElementById("back"),
     pn = document.getElementById("pageno"),
-    pos = document.getElementById("pagepos");
-  if (backStack) {
-    b.replaceChildren(el("span", "back-to", "Обратно към "), backStack.who);
-    b.hidden = false;
-    pn.hidden = pos.hidden = true;
-  } else {
-    b.hidden = true;
-    pn.hidden = pos.hidden = false;
-  }
+    pos = document.getElementById("pagepos"),
+    t = backTarget();
+  if (t) b.replaceChildren(el("span", "back-to", "Обратно към "), t.who);
+  b.hidden = !t;
+  pn.hidden = pos.hidden = !!t;
 }
 // A cross-reference: turn to page i, with a way back to the link followed.
 function jump(i, who, from) {
-  backStack = { page: cur, scroll: scroller().scrollTop, who: who, from: from };
-  goTo(i);
-  showBack();
+  const j = pageIndex(i);
+  if (j < 0) return;
+  backs.push({ page: cur, scroll: scroller().scrollTop, who: who, from: from });
+  show(j);
   document.getElementById("stage").scrollIntoView({ block: "start" });
 }
 function goBack(push = true) {
-  if (!backStack) return;
-  const t = backStack,
-    back = document.getElementById("back"),
+  const t = backTarget();
+  if (!t) return;
+  const back = document.getElementById("back"),
     onBack = document.activeElement === back;
-  backStack = null;
-  goTo(t.page, push);
-  // the back button is about to hide, so focus returns to the link followed
-  if (onBack)
-    (pages[cur].contains(t.from) ? t.from : pages[cur]).focus({ preventScroll: true });
+  backs.pop();
+  if (t.scroll == null) goTo(t.page, push);
+  else show(t.page, push);
+  // once the back button hides, focus returns to the link followed
+  if (onBack && back.hidden)
+    (t.from && pages[cur].contains(t.from) ? t.from : pages[cur]).focus({ preventScroll: true });
+  if (t.scroll == null) return;
   scroller().scrollTo({ top: t.scroll, behavior: "instant" });
   updateProgress();
   saveScroll();
-  showBack();
 }
 // Browser Back/Forward, or an edited address. Going back to the page a
 // cross-reference was followed from works like "Обратно към …" and restores
@@ -345,10 +375,8 @@ window.addEventListener("popstate", (e) => {
   const i = Math.max(0, pageFromHash());
   // an unknown address shows the cover; don't leave it in the address bar
   if (location.hash !== pageHash(i)) history.replaceState(null, "", pageUrl(i));
-  if (backStack && backStack.page === i) return goBack(false);
-  backStack = null;
+  if (backs.length && backs[backs.length - 1].page === i) return goBack(false);
   goTo(i, false);
-  showBack();
   if (e.state && e.state.page === PAGES[i].file) {
     scrollToAt(e.state.at);
     updateProgress();
@@ -455,7 +483,9 @@ function el(tag, cls, text) {
 // Consecutive pages with the same chapter number form a group; pages outside
 // the chapters (cover, about…) get a group with no heading.
 let group = null;
+// Standalone pages have their own link at the top of the drawer.
 PAGES.forEach((p, i) => {
+  if (p.standalone) return;
   const ch = chapterOf(p.file);
   if (!group || group.ch !== ch) {
     group = { ch: ch, ul: el("ul", "toc-pages") };
@@ -479,8 +509,10 @@ function openToc(search) {
     tocQuery.select();
   } else if (!tocQuery.value) {
     const b = tocList.querySelector("[aria-current]");
-    b.focus({ preventScroll: true });
-    b.scrollIntoView({ block: "center" });
+    if (b) {
+      b.focus({ preventScroll: true });
+      b.scrollIntoView({ block: "center" });
+    }
   }
 }
 // A click on the backdrop (the dialog itself, outside its panel) closes it.
@@ -689,8 +721,7 @@ SYSTEM_DARK.addEventListener("change", (e) => {
 function openHelp() {
   const i = pageIndex("help");
   if (i < 0 || cur === i) return;
-  const who = cur === 0 ? "корицата" : cur === 1 ? "съдържанието" : PAGES[cur].nav;
-  jump(i, who);
+  jump(i, whoOf(cur));
 }
 // Scroll to a section of the help page, opening it if it's a closed deep-dive.
 function helpTo(id) {

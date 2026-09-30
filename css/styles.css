@@ -1043,18 +1043,20 @@ h3.sub {
   height: 16px;
 }
 /* The way to the help page, always at hand: the one filled control in the
-   nav, so it's easy to find. */
+   nav, so it's easy to find. Square like the book's other buttons. On the
+   help page it turns pale, like a tab that's open. */
 .nav .help {
   color: var(--page);
   background: var(--moss-deep);
-  border-radius: 999px;
-  padding: 6px 13px 6px 10px;
+  border-radius: 2px;
+  padding: 6px 12px 6px 10px;
 }
-.nav .help:hover:not(:disabled) {
+.nav .help:hover:not([aria-current]) {
   color: var(--page);
   background: var(--moss);
 }
-.nav .help[aria-current="page"] {
+.nav .help[aria-current="page"],
+.nav .help[aria-current="page"]:hover {
   color: var(--moss-deep);
   background: var(--moss-soft);
   cursor: default;
@@ -1612,16 +1614,10 @@ html:has(.toc[open]) {
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  /* icon only, as a filled circle inside the 44px tap target */
+  /* icon only; the colour fills a square inside the 44px tap target */
   .nav .help {
-    padding: 0;
-    background: radial-gradient(circle, var(--moss-deep) 17px, transparent 17.5px);
-  }
-  .nav .help:hover:not(:disabled) {
-    background: radial-gradient(circle, var(--moss) 17px, transparent 17.5px);
-  }
-  .nav .help[aria-current="page"] {
-    background: radial-gradient(circle, var(--moss-soft) 17px, transparent 17.5px);
+    padding: 5px;
+    background-clip: content-box;
   }
   .nav .back::before {
     content: "↩\00a0";
