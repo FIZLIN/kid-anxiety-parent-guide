@@ -4,6 +4,8 @@ const CH1 = "I. Тялото на страха";
 const CH2 = "II. Лицата на страха";
 const CH3 = "III. Знаците на повърхността";
 const CH4 = "IV. Истории от кабинета";
+const CH5 = "V. Какво можем да направим ние";
+const CH6 = "VI. Трийсет малки глътки смелост";
 
 // Book pages in reading order.
 //   file:    pages/<file>.html
@@ -14,16 +16,11 @@ const PAGES = [
   { file: "contents", nav: "Съдържание", runhead: [BOOK, "Съдържание"] },
   { file: "ch1-map", nav: "Тялото на страха", runhead: [BOOK, "Глава първа"] },
   { file: "ch1-alarm", nav: "Алармата", runhead: [CH1, "Алармата в мозъка"] },
-  { file: "ch1-two-paths", nav: "Двата пътя", runhead: [CH1, "Двата пътя на страха"] },
-  { file: "ch1-brake", nav: "Спирачката", runhead: [CH1, "Спирачката, която узрява"] },
+  { file: "ch1-brake", nav: "Спирачката", runhead: [CH1, "Спирачката, която още не е узряла"] },
   { file: "ch1-stress-axis", nav: "Оста на стреса", runhead: [CH1, "Бавната вълна на стреса"] },
-  { file: "ch1-stress-trace", nav: "Следата на стреса", runhead: [CH1, "Когато стресът остави следа"] },
   { file: "ch1-three-gears", nav: "Трите предавки", runhead: [CH1, "Трите предавки на тялото"] },
   { file: "ch1-freeze", nav: "Замирането", runhead: [CH1, "Когато тялото замръзва"] },
-  { file: "ch1-gut", nav: "Корема", runhead: [CH1, "Когато тревогата боли"] },
-  { file: "ch1-temperament", nav: "Темпераментът", runhead: [CH1, "Роден по-предпазлив"] },
-  { file: "ch1-what-remains", nav: "Какво остава", runhead: [CH1, "Какво остава за нас"] },
-  { file: "ch1-figures", nav: "На цифри", runhead: [CH1, "На цифри"] },
+  { file: "ch1-gut", nav: "Коремът", runhead: [CH1, "Когато коремът говори"] },
   { file: "ch2-intro", nav: "Лицата на страха", runhead: [BOOK, "Глава втора"] },
   { file: "ch2-map", nav: "Карта на втора глава", runhead: [CH2, "Карта на главата"] },
   { file: "ch2-sm", nav: "Селективен мутизъм", runhead: [CH2, "Селективен мутизъм"] },
@@ -58,6 +55,19 @@ const PAGES = [
   { file: "ch4-ladder", nav: "Стълбата на страха", runhead: [CH4, "Стълбата на страха"] },
   { file: "ch4-act", nav: "Приемане и ангажираност", runhead: [CH4, "Приемане и ангажираност"] },
   { file: "ch4-evidence", nav: "Големите изследвания", runhead: [CH4, "Големите изследвания"] },
+  { file: "ch5-intro", nav: "Какво можем да направим ние", runhead: [BOOK, "Глава пета"] },
+  { file: "ch5-map", nav: "Карта на пета глава", runhead: [CH5, "Карта на главата"] },
+  { file: "ch5-calm", nav: "Вашето спокойствие", runhead: [CH5, "Първо вашето спокойствие"] },
+  { file: "ch5-words", nav: "Изречението, което лекува", runhead: [CH5, "Изречението, което лекува"] },
+  { file: "ch5-accom", nav: "Невидимата клетка", runhead: [CH5, "Невидимата клетка"] },
+  { file: "ch5-reassure", nav: "Отговор веднъж", runhead: [CH5, "Отговор веднъж"] },
+  { file: "ch5-autonomy", nav: "Нека детето да може", runhead: [CH5, "Нека детето да може"] },
+  { file: "ch5-ladder", nav: "Стълбата у дома", runhead: [CH5, "Стълбата у дома"] },
+  { file: "ch5-night", nav: "Когато се стъмни", runhead: [CH5, "Когато се стъмни"] },
+  { file: "ch5-help", nav: "Кога да потърсим помощ", runhead: [CH5, "Кога да потърсим помощ"] },
+  { file: "ch5-shelf", nav: "Рафтът", runhead: [CH5, "Рафтът"] },
+  { file: "ch6-map", nav: "Трийсет малки глътки", runhead: [BOOK, "Глава шеста"] },
+  { file: "help", nav: "Специалист и помощ", runhead: [BOOK, "Помощ и специалисти"] },
   { file: "about-project", nav: "За проекта", runhead: [BOOK, "За проекта"] },
   { file: "about-authors", nav: "Авторите", runhead: [BOOK, "Авторите"] },
 ];
@@ -127,6 +137,8 @@ PAGES.forEach(({ file }, i) => {
       el.classList.toggle("active", i === cur);
       pages[i].replaceWith(el);
       pages[i] = el;
+      // Pages with interactive parts (the map in chapter six) start from this event.
+      document.dispatchEvent(new CustomEvent("book:pageload", { detail: { file: file, el: el } }));
       if (i === cur) {
         updateProgress();
         restoreSavedScroll();
@@ -256,6 +268,9 @@ function render(push = true) {
     rh.querySelector(".r").textContent = head[1];
   }
   scroller().scrollTop = 0;
+  const ribbon = document.getElementById("ribbon");
+  if (PAGES[cur].file === "help") ribbon.setAttribute("aria-current", "page");
+  else ribbon.removeAttribute("aria-current");
   document.getElementById("stage").scrollIntoView({ block: "nearest" });
   updateProgress();
   // no scroll event when the new page is already at the top
@@ -342,7 +357,9 @@ window.addEventListener("popstate", (e) => {
 });
 // Links within the book: a cross-reference (<a class="xref" href="#<page>"
 // data-back="…">) turns to that page with a way back, a source reference
-// (<a class="seesrc" href="#<id>">) goes to the source card on this page.
+// (<a class="seesrc" href="#<id>">) goes to the source card on this page, and
+// a cross-reference within the page (<a class="xref" href="#<id>" data-here>)
+// goes to that section of the help page.
 // A click with a modifier is left to the browser, e.g. to open a new tab.
 document.addEventListener("click", (e) => {
   const a = e.target.closest && e.target.closest("a.xref, a.seesrc");
@@ -350,7 +367,8 @@ document.addEventListener("click", (e) => {
     return;
   e.preventDefault();
   const id = a.getAttribute("href").slice(1);
-  if (a.classList.contains("xref")) jump(id, a.dataset.back, a);
+  if (a.hasAttribute("data-here")) helpTo(id);
+  else if (a.classList.contains("xref")) jump(id, a.dataset.back, a);
   else toBottom(id);
 });
 // Notes and footnote definitions open in place. The button that toggles one
@@ -419,7 +437,7 @@ stage.addEventListener(
 );
 
 // Contents drawer: every page grouped by chapter, with search across the book.
-const CHAPTERS = [CH1, CH2, CH3, CH4];
+const CHAPTERS = [CH1, CH2, CH3, CH4, CH5, CH6];
 const toc = document.getElementById("toc"),
   tocList = document.getElementById("toc-list"),
   tocQuery = document.getElementById("toc-q"),
@@ -653,5 +671,131 @@ SYSTEM_DARK.addEventListener("change", (e) => {
   } catch (err) {}
   if (!saved) setTheme(e.matches ? "dark" : "light");
 });
+// ═══ Страницата „Кога да потърсим специалист“ (винаги под ръка) ═══
+// Отваря се от зелената лентичка горе вдясно; бутонът долу връща читателя обратно.
+function openHelp() {
+  const i = pageIndex("help");
+  if (i < 0 || cur === i) return;
+  const who = cur === 0 ? "корицата" : cur === 1 ? "съдържанието" : PAGES[cur].nav;
+  jump(i, who);
+}
+// Превърта до раздел на страницата за помощ и отваря затворено падащо блокче.
+function helpTo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.classList.contains("deepen")) setOpen(el, true);
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function ckToggle(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const o = el.classList.toggle("open");
+  const b = el.querySelector(".ck-more");
+  if (b) b.setAttribute("aria-expanded", o ? "true" : "false");
+}
+// Резюме в блокчето под списъка, според отметнатите сигнали.
+  (function(){
+  const THEMES=['тялото','поведението','чувствата и мислите','ежедневието'];
+  const REC_Y={
+    ped:'Започнете от личния лекар или педиатъра, за да се изключат телесни причини за оплакванията.',
+    eat:'Помолете педиатъра да следи растежа и теглото, докато работите по страха около храната.',
+    speech:'Помислете и за логопед, който да провери речта и езика.',
+    psy:'Запишете час при детски или клиничен психолог за подробна оценка.',
+    school:'Поговорете с учителката и, ако има, с психолога в градината или училището, за да имате общ план.',
+    parent:'Питайте специалиста за подход, в който участвате и вие, например програма за родители. Междувременно вижте раздела „Докато чакате“.',
+    mood:'Споменете на специалиста и промяната в настроението, за да бъде погледната и тя.'
+  };
+  const ORDER_Y=['ped','eat','speech','psy','school','parent','mood'];
+  const REC_R={
+    death:'Не оставяйте детето само, ако се тревожите за безопасността му, и попитайте спокойно какво има предвид. При непосредствена опасност звъннете на 112 или отидете в най-близкото спешно отделение.',
+    food:'Свържете се с личния лекар на детето още днес.',
+    body:'Потърсете лекар веднага, а при тежко състояние звъннете на 112.',
+    change:'Свържете се с лекар още днес или поговорете с психолог на 116 111.',
+    abuse:'При непосредствена опасност звъннете на 112. Сигнал можете да подадете и на 116 111 или на 0800 1 86 76.'
+  };
+  const ORDER_R=['death','body','abuse','food','change'];
+  function esc(t){return t.replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function link(inp){
+    const g=inp.dataset.go, t=esc(inp.dataset.sum);
+    if(!g)return t;
+    return g.charAt(0)==='#'
+      ?'<a class="xref" href="'+g+'" data-here>'+t+'</a>'
+      :'<a class="xref" href="#'+g+'" data-back="помощта">'+t+'</a>';
+  }
+  function plural(n){const w={2:'два',3:'три',4:'четири',5:'пет',6:'шест',7:'седем',8:'осем',9:'девет',10:'десет'};return n===1?'един сигнал':(w[n]||n)+' сигнала';}
+  let lastText='';
+  function update(){
+    const box=document.getElementById('helpcheck'), out=document.getElementById('verdict');
+    if(!box||!out)return;
+    const Y=[...box.querySelectorAll('input[data-level="y"]:checked')];
+    const R=[...box.querySelectorAll('input[data-level="r"]:checked')];
+    out.className='verdict';
+    if(!Y.length&&!R.length){
+      lastText='';
+      out.innerHTML='<div class="v-lab">Засега нищо не е отбелязано</div><p>Ако страхът е типичен за възрастта, отшумява и не пречи на ежедневието, най-вероятно е част от растенето. Наблюдавайте, подкрепяйте и се върнете тук, ако нещо се промени. Щом отметнете сигнал, тук ще се появи резюме, подредено по теми, с конкретни следващи стъпки.</p>';
+      return;
+    }
+    let h='', txt=[];
+    if(R.length){
+      out.classList.add('r');
+      h+='<div class="v-lab">Не чакайте планов час</div>';
+      h+='<p>Отбелязали сте '+(R.length===1?'един спешен сигнал':({2:'два',3:'три',4:'четири',5:'пет'}[R.length]||R.length)+' спешни сигнала')+(Y.length?' и още '+plural(Y.length):'')+'. Потърсете помощ още днес. Ако имате нужда да поговорите с някого веднага, 116 111 отговаря денонощно, и на родители.</p>';
+      h+='<div class="v-sec">Спешно</div><ul class="v-list">';
+      txt.push('СПЕШНО');
+      const keys=new Set(R.map(function(i){return i.dataset.rec;}));
+      R.forEach(function(i){h+='<li><strong>'+link(i)+'</strong></li>';txt.push('- '+i.dataset.sum);});
+      h+='</ul><div class="v-sec">Какво да направите сега</div><ul class="v-list">';
+      ORDER_R.forEach(function(k){if(keys.has(k)){h+='<li>'+REC_R[k]+'</li>';txt.push('> '+REC_R[k]);}});
+      h+='</ul><div class="v-calls"><a href="tel:112">112</a><a href="tel:116111">116 111</a>'+(keys.has('death')?'<a href="#h-death" onclick="helpTo(\'h-death\');return false;">Ако детето говори за смърт</a>':'')+'</div>';
+    }else{
+      out.classList.add('y');
+      if(Y.length<3){
+        h+='<div class="v-lab">Струва си да наблюдавате отблизо</div><p>Отбелязали сте '+plural(Y.length)+'. Ако продължава или се засилва през следващите седмици, запишете час. Един сигнал сам по себе си не е диагноза, а покана да погледнете по-внимателно.</p>';
+      }else{
+        h+='<div class="v-lab">Струва си да си запишете час</div><p>Отбелязали сте '+plural(Y.length)+'. В следващите седмици потърсете личния лекар или детски психолог. Това не значи, че нещо е непоправимо, а че детето заслужава поглед отблизо. Ранната подкрепа работи.</p>';
+      }
+    }
+    if(Y.length){
+      const by={};THEMES.forEach(function(t){by[t]=[];});
+      Y.forEach(function(i){(by[i.dataset.theme]||(by[i.dataset.theme]=[])).push(i);});
+      const used=THEMES.filter(function(t){return by[t].length;});
+      h+='<div class="v-sec">'+(R.length?'Другите сигнали':'Какво отбелязахте')+'</div><ul class="v-list">';
+      txt.push('','ОТБЕЛЯЗАНИ СИГНАЛИ');
+      used.forEach(function(t){
+        h+='<li><span class="v-theme">'+t.charAt(0).toUpperCase()+t.slice(1)+':</span> '+by[t].map(link).join(', ')+'</li>';
+        txt.push('- '+t+': '+by[t].map(function(i){return i.dataset.sum;}).join(', '));
+      });
+      h+='</ul>';
+      let obs='';
+      if(used.length>=3){obs='Тревогата се проявява в '+(used.length===3?'три':'четири')+' различни области наведнъж. Това е още една причина за цялостна оценка, а не за отделни решения на всеки проблем.';}
+      else{
+        const max=Math.max.apply(null,used.map(function(t){return by[t].length;}));
+        const top=used.filter(function(t){return by[t].length===max;});
+        if(Y.length>=2&&top.length===1)obs='Повечето сигнали са в темата „'+top[0]+'“. Разкажете на специалиста най-напред за тях.';
+      }
+      if(obs){h+='<p class="v-obs">'+obs+'</p>';txt.push('',obs);}
+      if(!R.length){
+        const recs=new Set(['psy']);
+        Y.forEach(function(i){i.dataset.rec.split(' ').forEach(function(r){recs.add(r);});});
+        h+='<div class="v-sec">Откъде да започнете</div><ul class="v-list">';
+        txt.push('','СЛЕДВАЩИ СТЪПКИ');
+        ORDER_Y.forEach(function(k){if(recs.has(k)){h+='<li>'+REC_Y[k]+'</li>';txt.push('- '+REC_Y[k]);}});
+        h+='</ul>';
+        if(Y.length>=4||recs.has('mood'))h+='<p class="v-note">И за вас: ако се чувствате изтощени, подкрепа има и за родителя. Kabinet.bg, <a href="tel:080020202">0800 20 202</a>, предлага безплатни първи консултации.</p>';
+      }
+    }
+    h+='<button class="v-copy" type="button" onclick="copySummary(this)">Копирай резюмето за срещата със специалиста</button>';
+    lastText='Резюме от „Смелост на малки глътки“\n\n'+txt.join('\n');
+    out.innerHTML=h;
+  }
+  window.copySummary=function(btn){
+    const t=lastText;
+    function done(ok){btn.textContent=ok?'Копирано. Можете да го поставите в бележките си.':'Копирането не успя. Маркирайте текста ръчно.';setTimeout(function(){btn.textContent='Копирай резюмето за срещата със специалиста';},2600);}
+    function fallback(){try{const a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();const ok=document.execCommand('copy');document.body.removeChild(a);done(ok);}catch(e){done(false);}}
+    try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){done(true);},fallback);}else fallback();}catch(e){fallback();}
+  };
+  document.addEventListener('change',function(e){if(e.target&&e.target.closest&&e.target.closest('#helpcheck'))update();});
+})();
+
 setTheme(document.documentElement.dataset.theme);
 render(false);
