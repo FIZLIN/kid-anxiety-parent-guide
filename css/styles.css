@@ -1038,9 +1038,10 @@ h3.sub {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+/* The ≡ runs from the top of a capital to the baseline, like a letter, so it
+   lines up with the capital С beside it rather than sitting low next to it. */
 .nav .home .icon {
-  width: 16px;
-  height: 16px;
+  translate: 0 -0.09em;
 }
 /* The way to the help page, always at hand: the one filled control in the
    nav, so it's easy to find. Square like the book's other buttons. On the
@@ -1065,6 +1066,12 @@ h3.sub {
 :root[data-theme="dark"] .nav .theme .moon,
 :root:not([data-theme="dark"]) .nav .theme .sun {
   display: none;
+}
+/* Lora has more room above its letters than below, so a label centred as a
+   box reads about 1.8px low next to its icon (and in the help button's box).
+   Lift it by that much, so the lowercase letters sit on the icon's middle. */
+.nav .label {
+  translate: 0 -0.125em;
 }
 /* visually hidden, still read by screen readers */
 .nav .theme .label {
@@ -1613,6 +1620,10 @@ html:has(.toc[open]) {
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+  /* no label beside it here, so it stays centred like the other icons */
+  .nav .home .icon {
+    translate: none;
   }
   /* icon only; the colour fills a square inside the 44px tap target */
   .nav .help {

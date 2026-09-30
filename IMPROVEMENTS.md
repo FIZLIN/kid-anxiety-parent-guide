@@ -18,6 +18,33 @@ UI and feature backlog for the book preview. Tick items off as they land.
 - [x] **Dark mode.** Redefine the colour tokens under `prefers-color-scheme: dark`, with an optional manual toggle.
 - [x] **Visible focus styles.** Add `:focus-visible` for `.seesrc`, `.map-item`, `.toc-chapter` and the nav buttons (only `.fnmark` and `.xref` have them today).
 
+## Motion
+
+Already in place: a 0.5s fade-in on page turns (nothing fades out, and it doesn't show direction), the contents drawer sliding in (it snaps shut on close), notes expanding, the `.flash` highlight on a source card and the pulse on the map's next day.
+
+Guidelines, following common practice (Material Design, Apple's HIG), and calm and paper-like for this book:
+
+- Motion should explain something: where a thing came from or went, or that an action worked. It shouldn't just decorate.
+- Keep it short: 100–200ms for small feedback, 200–300ms for panels and expanding sections, 300–400ms at most for whole-page changes.
+- Ease out when entering and ease in when leaving. No bounce.
+- Animate only `transform` and `opacity`, never height or other layout properties.
+- Under `prefers-reduced-motion`, replace movement with a plain fade and keep the feedback.
+
+### Suggestions
+
+- [ ] **Directional page turns.** Going forward, the old page drifts about 12px left and fades while the new one comes in from the right; Назад does the reverse. About 220ms. Use the View Transitions API (`document.startViewTransition()` around the switch in `render()`); browsers without it keep the current behaviour. This replaces the 0.5s fade-in.
+- [ ] **Help opens as a layer.** The help page rises from the bottom and sinks back when you leave it, instead of turning sideways like a page. This shows it's separate from the page order (it's `standalone` in `PAGES`).
+- [ ] **Smooth drawer close.** Slide the contents drawer out and fade its backdrop, instead of snapping shut. Plain CSS can do it now: `@starting-style` plus `transition-behavior: allow-discrete` on the `<dialog>`.
+- [ ] **A small reward on the map.** On "Намерихме го", the X draws itself in (`stroke-dashoffset`), a ring appears around it, and the dotted path to the next day fills in, about 600ms in all. It's the one place where a small celebration fits the content. Needs its own design pass.
+- [ ] **Gentle footer changes.** Cross-fade the middle of the footer between the page title and "Обратно към …", and fade the Помощ button between its green and pale states, instead of snapping.
+- [ ] **Expand map days and checklist items without clipping.** `.k6-body` and `.ck-body` still open with fixed `max-height` limits (1200px and 520px), so the end of the text can get cut off at the 135% text setting, the problem already fixed for notes. Switch them to the same `grid-template-rows: 0fr → 1fr` animation. See also "Extend reduced motion" under Accessibility.
+
+### Avoid
+
+- Paragraphs fading in as you scroll: distracting while reading, and it can hide text from the browser's find-in-page.
+- Parallax, bounce, and anything that loops, apart from the map's existing pulse.
+- Easing on the reading-progress line: it's tied to scrolling, so easing would only make it lag.
+
 ## Features
 
 ### Must have
